@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from fit_galgo.utils.date_utils import try_to_compute_local_datetime
 
@@ -186,7 +186,7 @@ class SetModel(BaseModel):
     message_index: int | None = None
     wkt_step_index: int | None = None
 
-    @validator("set_type", pre=True, always=True)
+    @field_validator("set_type")
     @classmethod
     def convert_set_type(cls, value):
         return value if value is not None else "Unknown"
@@ -219,7 +219,7 @@ class WorkoutModel(BaseModel):
     pool_length: int | None = None
     pool_length_unit: str | None = None
 
-    @validator("wkt_name", pre=True, always=True)
+    @field_validator("wkt_name")
     @classmethod
     def convert_wkt_name(cls, value):
         if value is not None and isinstance(value, list):
@@ -296,7 +296,7 @@ class WorkoutStepModel(BaseModel):
     secondary_custom_target_cadence_high: int | None = None
     secondary_custom_target_power_high: int | None = None
 
-    @validator("notes", pre=True, always=True)
+    @field_validator("notes")
     @classmethod
     def convert_notes(cls, value):
         if value is not None and isinstance(value, list):
