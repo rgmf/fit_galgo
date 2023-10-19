@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "fit_galgo"
+version = "0.1.0"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# [tool.pytest]
+# Configuración de pytest si es necesario
+# addopts = ["-v"]  # Ejemplo: agregar opciones de pytest
+
+[tool.poetry.dependencies]
+garmin-fit-sdk = "~=21.115"
+pydantic = "~=2.4"
+pytest = "~=7.4"
+
+[tool.flake8]
+max-line-length = 89
