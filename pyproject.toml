@@ -1,6 +1,9 @@
 [tool.poetry]
 name = "fit_galgo"
-version = "0.1.0"
+version = "0.1.2"
+authors = ["Román Martínez <rgmf@riseup.net>"]
+description = ""
+readme = "README.md"
 
 [build-system]
 requires = ["setuptools", "wheel"]
@@ -11,6 +14,7 @@ build-backend = "setuptools.build_meta"
 # addopts = ["-v"]  # Ejemplo: agregar opciones de pytest
 
 [tool.poetry.dependencies]
+python = "~=3.11"
 garmin-fit-sdk = "~=21.115"
 pydantic = "~=2.4"
 pytest = "~=7.4"
