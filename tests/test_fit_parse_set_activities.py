@@ -5,7 +5,9 @@ from fit_galgo.fit.definitions import (
     TRAINING_SPORT,
     STRENGTH_TRAINING_SUB_SPORT
 )
-from fit_galgo.fit.results import FitActivity, FitSetActivity, FitSet, FitResult, FitError
+from fit_galgo.fit.results import (
+    FitActivity, FitSetActivity, FitSet, FitResult, FitError
+)
 from fit_galgo.fit.models import FileIdModel
 
 
