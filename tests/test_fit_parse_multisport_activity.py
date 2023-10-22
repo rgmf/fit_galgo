@@ -18,6 +18,7 @@ from fit_galgo.fit.definitions import (
 from .test_fit_parse_distance_activities import (
     assert_is_distance_activity_with_required_stats
 )
+from fit_galgo.fit.models import FileIdModel
 
 
 def assert_parse_without_errors(path_file: str) -> FitMultisportActivity:
@@ -26,6 +27,8 @@ def assert_parse_without_errors(path_file: str) -> FitMultisportActivity:
     assert not isinstance(activity, FitError)
     assert isinstance(activity, FitResult)
     assert isinstance(activity, FitMultisportActivity)
+    assert hasattr(activity.model, "file_id")
+    assert isinstance(activity.model.file_id, FileIdModel)
     return activity
 
 

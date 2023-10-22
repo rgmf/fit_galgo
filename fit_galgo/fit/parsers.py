@@ -24,6 +24,7 @@ from fit_galgo.fit.exceptions import (
     FitMessageValidationException
 )
 from fit_galgo.fit.models import (
+    FileIdModel,
     MultisportActivityModel,
     DistanceActivityModel,
     ClimbActivityModel,
@@ -68,6 +69,22 @@ class FitActivityParser(FitAbstractParser):
         self._messages: dict[str, list] = messages
 
     def parse(self) -> FitActivity | FitError:
+        if "FILE_ID" not in self._messages:
+            return FitError(
+                self._fit_file_path,
+                [NotFitMessageFoundException("file_id")]
+            )
+        if len(self._messages["FILE_ID"]) != 1:
+            return FitError(
+                self._fit_file_path,
+                [
+                    UnexpectedDataMessageException(
+                        "file_id",
+                        "expected one message per file but got "
+                        f"{len(self._messages['FILE_ID'])} messages"
+                    )
+                ]
+            )
         if not self._messages["SESSION"]:
             return FitError(self._fit_file_path, [NotFitMessageFoundException("session")])
 
@@ -107,8 +124,11 @@ class FitActivityParser(FitAbstractParser):
         :raise: NotSupportedFitSportException if the sport in the message is
                 not supported.
         """
+        file_id: FileIdModel = self._messages["FILE_ID"][0]
+
         if len(self._messages["SESSION"]) > 1:
             model = MultisportActivityModel(
+                file_id=file_id,
                 sessions=[session_model for session_model in self._messages["SESSION"]],
                 records=[record_model for record_model in self._messages["RECORD"]],
                 laps=[lap_model for lap_model in self._messages["LAP"]]
@@ -123,6 +143,7 @@ class FitActivityParser(FitAbstractParser):
 
         if is_distance_sport(session.sport):
             model = DistanceActivityModel(
+                file_id=file_id,
                 session=session,
                 records=[r for r in self._messages["RECORD"]],
                 laps=[lap for lap in self._messages["LAP"]],
@@ -133,6 +154,7 @@ class FitActivityParser(FitAbstractParser):
 
         if is_climb_sport(session.sport):
             model = ClimbActivityModel(
+                file_id=file_id,
                 session=session,
                 splits=[s for s in self._messages["SPLIT"]],
                 workout=workout,
@@ -142,6 +164,7 @@ class FitActivityParser(FitAbstractParser):
 
         if is_set_sport(session.sport):
             model = SetActivityModel(
+                file_id=file_id,
                 session=session,
                 sets=[s for s in self._messages["SET"]],
                 workout=workout,
@@ -158,6 +181,22 @@ class FitMonitoringParser(FitAbstractParser):
         self._messages: dict[str, list] = messages
 
     def parse(self) -> FitMonitor | FitError:
+        if "FILE_ID" not in self._messages:
+            return FitError(
+                self._fit_file_path,
+                [NotFitMessageFoundException("file_id")]
+            )
+        if len(self._messages["FILE_ID"]) != 1:
+            return FitError(
+                self._fit_file_path,
+                [
+                    UnexpectedDataMessageException(
+                        "file_id",
+                        "expected one message per file but got "
+                        f"{len(self._messages['FILE_ID'])} messages"
+                    )
+                ]
+            )
         if "MONITORING_INFO" not in self._messages:
             return FitError(
                 self._fit_file_path,
@@ -177,6 +216,7 @@ class FitMonitoringParser(FitAbstractParser):
             )
 
         try:
+            file_id: FileIdModel = self._messages["FILE_ID"][0]
             monitoring_info: MonitoringInfoModel = self._messages["MONITORING_INFO"][0]
             monitorings: list[MonitoringModel] = (
                 [message for message in self._messages["MONITORING"]]
@@ -200,6 +240,7 @@ class FitMonitoringParser(FitAbstractParser):
         return FitMonitor(
             self._fit_file_path,
             MonitorModel(
+                file_id=file_id,
                 monitoring_info=monitoring_info,
                 monitorings=monitorings,
                 hr_datas=hr_datas,
@@ -215,6 +256,22 @@ class FitHrvParser(FitAbstractParser):
         self._messages: dict[str, list[BaseModel]] = messages
 
     def parse(self) -> FitHrv | FitError:
+        if "FILE_ID" not in self._messages:
+            return FitError(
+                self._fit_file_path,
+                [NotFitMessageFoundException("file_id")]
+            )
+        if len(self._messages["FILE_ID"]) != 1:
+            return FitError(
+                self._fit_file_path,
+                [
+                    UnexpectedDataMessageException(
+                        "file_id",
+                        "expected one message per file but got "
+                        f"{len(self._messages['FILE_ID'])} messages"
+                    )
+                ]
+            )
         if "HRV_STATUS_SUMMARY" not in self._messages:
             return FitError(self._fit_file_path, [NotFitMessageFoundException("hrv_status_summary")])
 
@@ -234,9 +291,10 @@ class FitHrvParser(FitAbstractParser):
             )
 
         try:
+            file_id: FileIdModel = self._messages["FILE_ID"][0]
             summary: HrvStatusSummaryModel = self._messages["HRV_STATUS_SUMMARY"][0]
             values: list[HrvValueModel] = self._messages["HRV_VALUE"]
-            model = HrvModel(summary=summary, values=values)
+            model = HrvModel(file_id=file_id, summary=summary, values=values)
             return FitHrv(self._fit_file_path, model)
         except ValidationError as error:
             return FitError(self._fit_file_path, [FitMessageValidationException(error)])
@@ -248,6 +306,22 @@ class FitSleepParser(FitAbstractParser):
         self._messages: dict[str, list] = messages
 
     def parse(self) -> FitSleep | FitError:
+        if "FILE_ID" not in self._messages:
+            return FitError(
+                self._fit_file_path,
+                [NotFitMessageFoundException("file_id")]
+            )
+        if len(self._messages["FILE_ID"]) != 1:
+            return FitError(
+                self._fit_file_path,
+                [
+                    UnexpectedDataMessageException(
+                        "file_id",
+                        "expected one message per file but got "
+                        f"{len(self._messages['FILE_ID'])} messages"
+                    )
+                ]
+            )
         if "SLEEP_ASSESSMENT" not in self._messages:
             return FitError(
                 self._fit_file_path,
@@ -273,9 +347,10 @@ class FitSleepParser(FitAbstractParser):
             )
 
         try:
+            file_id = self._messages["FILE_ID"][0]
             assessment = self._messages["SLEEP_ASSESSMENT"][0]
             levels = [level for level in self._messages["SLEEP_LEVEL"]]
-            model = SleepModel(assessment=assessment, levels=levels)
+            model = SleepModel(file_id=file_id, assessment=assessment, levels=levels)
             return FitSleep(self._fit_file_path, model)
         except ValidationError as error:
             return FitError(self._fit_file_path, [FitMessageValidationException(error)])

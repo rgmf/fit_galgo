@@ -520,6 +520,7 @@ class FitMultisportActivity(FitResult):
                 activity = FitDistanceActivity(
                     fit_file_path,
                     DistanceActivityModel(
+                        file_id=self.model.file_id,
                         session=session,
                         workout=None,
                         workout_steps=[],

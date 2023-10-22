@@ -18,6 +18,7 @@ from fit_galgo.fit.results import (
     FitActivity,
     FitDistanceActivity
 )
+from fit_galgo.fit.models import FileIdModel
 
 
 def assert_parse_without_errors(path_file: str) -> FitDistanceActivity:
@@ -27,6 +28,8 @@ def assert_parse_without_errors(path_file: str) -> FitDistanceActivity:
     assert isinstance(activity, FitResult)
     assert isinstance(activity, FitActivity)
     assert isinstance(activity, FitDistanceActivity)
+    assert hasattr(activity.model, "file_id")
+    assert isinstance(activity.model.file_id, FileIdModel)
     return activity
 
 

@@ -2,16 +2,20 @@ from datetime import datetime, timedelta, date
 
 from fit_galgo.galgo import FitGalgo
 from fit_galgo.fit.results import FitMonitor
-from fit_galgo.fit.models import MonitorModel
+from fit_galgo.fit.models import MonitorModel, FileIdModel
 
 
 def assert_monitoring_data(path_file: str) -> None:
     galgo = FitGalgo(path_file)
     monitor: FitMonitor = galgo.parse()
 
-    # Dates and datetimes
+    # Models
     assert isinstance(monitor, FitMonitor)
     assert isinstance(monitor.model, MonitorModel)
+    assert hasattr(monitor.model, "file_id")
+    assert isinstance(monitor.model.file_id, FileIdModel)
+
+    # Dates and datetimes
     assert monitor.datetime_utc is not None
     assert monitor.datetime_local is not None
 

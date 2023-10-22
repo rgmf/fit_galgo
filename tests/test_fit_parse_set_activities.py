@@ -3,10 +3,10 @@ from datetime import datetime
 from fit_galgo.galgo import FitGalgo
 from fit_galgo.fit.definitions import (
     TRAINING_SPORT,
-    STRENGTH_TRAINING_SUB_SPORT,
-    SetType
+    STRENGTH_TRAINING_SUB_SPORT
 )
 from fit_galgo.fit.results import FitActivity, FitSetActivity, FitSet, FitResult, FitError
+from fit_galgo.fit.models import FileIdModel
 
 
 def assert_parse_without_errors(path_file: str) -> FitSetActivity:
@@ -16,6 +16,8 @@ def assert_parse_without_errors(path_file: str) -> FitSetActivity:
     assert isinstance(activity, FitResult)
     assert isinstance(activity, FitActivity)
     assert isinstance(activity, FitSetActivity)
+    assert hasattr(activity.model, "file_id")
+    assert isinstance(activity.model.file_id, FileIdModel)
     return activity
 
 

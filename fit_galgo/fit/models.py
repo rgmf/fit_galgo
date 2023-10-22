@@ -415,12 +415,14 @@ class SleepLevelModel(BaseModel):
 
 
 class ActivityModel(BaseModel):
+    file_id: FileIdModel
     session: SessionModel
     workout: WorkoutModel | None = None,
     workout_steps: list[WorkoutStepModel] = []
 
 
 class MultisportActivityModel(BaseModel):
+    file_id: FileIdModel
     sessions: list[SessionModel]
     records: list[RecordModel]
     laps: list[LapModel]
@@ -440,6 +442,7 @@ class SetActivityModel(ActivityModel):
 
 
 class MonitorModel(BaseModel):
+    file_id: FileIdModel
     monitoring_info: MonitoringInfoModel
     monitorings: list[MonitoringModel]
     hr_datas: list[MonitoringHrDataModel] = []
@@ -448,10 +451,12 @@ class MonitorModel(BaseModel):
 
 
 class HrvModel(BaseModel):
+    file_id: FileIdModel
     summary: HrvStatusSummaryModel
     values: list[HrvValueModel] = []
 
 
 class SleepModel(BaseModel):
+    file_id: FileIdModel
     assessment: SleepAssessmentModel
     levels: list[SleepLevelModel] = []
