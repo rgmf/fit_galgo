@@ -4,11 +4,11 @@ from pydantic import BaseModel, ValidationError
 from garmin_fit_sdk import Decoder, Stream, Profile
 
 from fit_galgo.logging.logging import get_logger, initialize, LogLevel
-from fit_galgo.fit.definitions import MESSAGES
+from fit_galgo.fit.messages import MESSAGES
 from fit_galgo.fit.exceptions import (
     FitException, NotFitMessageFoundException, NotSupportedFitFileException
 )
-from fit_galgo.fit.results import FitResult, FitError
+from fit_galgo.fit.models import FitModel, FitError
 from fit_galgo.fit.parsers import (
     FitActivityParser, FitMonitoringParser, FitHrvParser, FitSleepParser
 )
@@ -54,14 +54,14 @@ FIT_FILE_SUPPORTED = {
 
 class FitReader:
     def __init__(self, root_folder: str) -> None:
-        self.fit_results: dict[str, FitResult] = {}
+        self.fit_results: dict[str, FitModel] = {}
 
         for dirpath, dirnames, filenames in os.walk(root_folder):
             for filename in [name for name in filenames if name.lower().endswith(".fit")]:
                 print(os.path.join(dirpath, filename))
                 fit_file_path: str = os.path.join(dirpath, filename)
                 fit_parser = FitGalgo(fit_file_path)
-                fit_result: FitResult = fit_parser.parse()
+                fit_result: FitModel = fit_parser.parse()
                 self.fit_results[fit_file_path] = fit_result
 
 
@@ -87,24 +87,33 @@ class FitGalgo:
         self._errors: list[Exception] = []
         self._has_critical_error: bool = False
 
-    def parse(self) -> FitResult:
+    def parse(self) -> FitModel | FitError:
         stream = Stream.from_file(self._fit_file_path)
         decoder = Decoder(stream)
         _, decoder_errors = decoder.read(mesg_listener=self._mesg_listener)
         self._errors.extend(decoder_errors)
 
         if len(self._errors) > 0:
-            return FitError(self._fit_file_path, self._errors)
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=self._errors
+            )
 
         if not self._messages["FILE_ID"]:
             self._errors.append(NotFitMessageFoundException("file_id"))
-            return FitError(self._fit_file_path, self._errors)
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=self._errors
+            )
 
         file_type: str = self._messages["FILE_ID"][0].file_type
 
         if file_type not in FIT_FILE_SUPPORTED.keys():
             self._errors.append(NotSupportedFitFileException(file_type))
-            return FitError(self._fit_file_path, self._errors)
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=self._errors
+            )
 
         parser = FIT_FILE_SUPPORTED[file_type]["parser_cls"](
             fit_file_path=self._fit_file_path,

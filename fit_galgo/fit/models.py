@@ -1,11 +1,69 @@
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
+from collections import namedtuple
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator, Field, ConfigDict
 
-from fit_galgo.utils.date_utils import try_to_compute_local_datetime
+from fit_galgo.fit.definitions import (
+    HRV_STATUS,
+    ACTIVITY_TYPES,
+    ACTIVITY_TYPE_UNKNOWN,
+    SplitType,
+    ClimbResult,
+    TRANSITION_SPORT,
+    is_distance_sport,
+    SLEEP_LEVEL,
+    UNKNOWN,
+    EXERCISE_CATEGORIES,
+    SetType
+)
+from fit_galgo.utils.date_utils import (
+    try_to_compute_local_datetime,
+    combine_date_and_seconds
+)
+
+DoubleStat = namedtuple("DoubleStat", ["max", "avg"])
+TripleStat = namedtuple("TripleStat", ["max", "min", "avg"])
+AltitudeStat = namedtuple("AltitudeStat", ["max", "min", "gain", "loss"])
+LocationStat = namedtuple("LocationStat", ["lat", "lon"])
+LocationRecordStat = namedtuple(
+    "LocationRecordStat", ["lat", "lon", "altitude", "gps_accuracy"]
+)
+WorkoutDuration = namedtuple(
+    "WorkoutDuration",
+    [
+        "type", "value", "time", "distance", "hr", "calories", "step", "power", "reps"
+    ]
+)
+WorkoutRepeat = namedtuple(
+    "WorkoutRepeat", ["steps", "time", "distance", "calories", "hr", "power",]
+)
+WorkoutTarget = namedtuple(
+    "WorkoutTarget",
+    [
+        "type", "value", "speed_zone", "hr_zone", "cadence_zone",
+        "power_zone", "stroke_type"
+    ]
+)
+WorkoutCustomTarget = namedtuple(
+    "WorkoutCustomTarget",
+    [
+        "value_low", "speed_low", "heart_rate_low", "cadence_low", "power_low",
+        "value_high", "speed_high", "heart_rate_high", "cadence_high", "power_high"
+    ]
+)
+TimeStat = namedtuple(
+    "TimeStat", [
+        "timestamp",   # when event was registered
+        "start_time",  # start time, when user pressed play/start button.
+        "elapsed",     # time from start to end NOT including pauses.
+        "timer"        # time from start to end including pauses.
+    ]
+)
+RecordsAndLaps = namedtuple("RecordsAndLaps", ["records", "laps"])
 
 
-class FileIdModel(BaseModel):
+class FileId(BaseModel):
     file_type: str | int = Field(alias="type")
     serial_number: int | None = None
     time_created: datetime | None = None
@@ -14,220 +72,34 @@ class FileIdModel(BaseModel):
     garmin_product: str | None = None
 
 
-class SessionModel(BaseModel):
-    message_index: int
-    timestamp: datetime
-    start_time: datetime
-    total_elapsed_time: float
-    total_timer_time: float
-    sport: str
-    sub_sport: str
-
-    start_position_lat: int | None = None
-    start_position_long: int | None = None
-    end_position_lat: int | None = None
-    end_position_long: int | None = None
-
-    first_lap_index: int | None = None
-    num_laps: int | None = None
-
-    sport_profile_name: str | None = None
-    sport_index: int | None = None
-
-    total_distance: float | None = None
-    total_cycles: int | None = None
-    total_strides: int | None = None
-    enhanced_avg_speed: float | None = None
-    avg_speed: float | None = None
-    enhanced_max_speed: float | None = None
-    max_speed: float | None = None
-    avg_heart_rate: float | None = None
-    max_heart_rate: float | None = None
-    avg_cadence: float | None = None
-    avg_running_cadence: float | None = None
-    max_cadence: float | None = None
-    max_running_cadence: float | None = None
-    total_calories: float | None = None
-    total_ascent: float | None = None
-    total_descent: float | None = None
-    avg_temperature: float | None = None
-    max_temperature: float | None = None
-    min_temperature: float | None = None
-    enhanced_avg_respiration_rate: float | None = None
-    enhanced_max_respiration_rate: float | None = None
-    enhanced_min_respiration_rate: float | None = None
-
-    training_load_peak: float | None = None
-    total_training_effect: float | None = None
-    total_anaerobic_training_effect: float | None = None
-
-    avg_fractional_cadence: float | None = None
-    max_fractional_cadence: float | None = None
-    total_fractional_ascent: float | None = None
-    total_fractional_descent: float | None = None
+class FitModel(BaseModel):
+    fit_file_path: str
+    file_id: FileId
 
 
-class RecordModel(BaseModel):
-    timestamp: datetime
-    position_lat: int | None = None
-    position_long: int | None = None
-    altitude: float | None = None
-    enhanced_altitude: float | None = None
-    heart_rate: int | None = None
-    cadence: int | None = None
-    distance: float | None = None
-    enhanced_distance: float | None = None
-    speed: float | None = None
-    enhanced_speed: float | None = None
-    power: int | None = None
-    grade: int | None = None
-    resistance: int | None = None
-    time_from_course: int | None = None
-    cycle_length: int | None = None
-    temperature: int | None = None
-    cycles: int | None = None
-    total_cycles: int | None = None
-    gps_accuracy: int | None = None
-    vertical_speed: int | None = None
-    calories: int | None = None
-    fractional_cadence: float | None = None
-    step_length: int | None = None
-    absolute_pressure: int | None = None
-    respiration_rate: float | None = None
-    enhanced_respiration_rate: float | None = None
-    current_stress: int | None = None
-    ascent_rate: int | None = None
+class FitError(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    fit_file_path: str
+    errors: list[Exception]
 
 
-class LapModel(BaseModel):
-    message_index: int
-    timestamp: datetime
+class WorkoutExercise(BaseModel):
+    category: str
+    name: str = UNKNOWN
+    weight: float = 0.0
 
-    sport: str | None = None
-    sub_sport: str | None = None
-
-    start_position_lat: int | None = None
-    start_position_long: int | None = None
-    end_position_lat: int | None = None
-    end_position_long: int | None = None
-
-    total_elapsed_time: float | None = None
-    total_timer_time: float | None = None
-    total_moving_time: float | None = None
-
-    total_distance: float | None = None
-
-    start_time: datetime | None = None
-
-    avg_speed: float | None = None
-    enhanced_avg_speed: float | None = None
-    max_speed: float | None = None
-    enhanced_max_speed: float | None = None
-
-    avg_heart_rate: int | None = None
-    max_heart_rate: int | None = None
-    min_heart_rate: int | None = None
-
-    avg_cadence: int | None = None
-    avg_running_cadence: int | None = None
-    max_cadence: int | None = None
-    max_running_cadence: int | None = None
-
-    total_ascent: int | None = None
-    total_descent: int | None = None
-    avg_altitude: float | None = None
-    enhanced_avg_altitude: float | None = None
-    max_altitude: float | None = None
-    enhanced_max_altitude: float | None = None
-    min_altitude: float | None = None
-    enhanced_min_altitude: float | None = None
-    avg_grade: int | None = None
-    avg_pos_grade: int | None = None
-    avg_neg_grade: int | None = None
-    max_pos_grade: int | None = None
-    max_neg_grade: int | None = None
-
-    wkt_step_index: int | None = None
-
-    event: str | None = None
-    event_type: str | None = None
-
-    total_cycles: int | None = None
-    total_strides: int | None = None
-    total_strokes: int | None = None
-
-    total_calories: int | None = None
-    total_fat_calories: int | None = None
-
-    intensity: int | None = None
-    lap_trigger: int | str | None = None
-    gps_accuracy: int | None = None
-
-    avg_temperature: int | None = None
-    max_temperature: int | None = None
-    min_tempearture: int | None = None
-
-    avg_respiration_rate: float | None = None
-    enhanced_avg_respiration_rate: float | None = None
-    max_respiration_rate: float | None = None
-    enhanced_max_respiration_rate: float | None = None
-
-
-class SetModel(BaseModel):
-    timestamp: datetime
-    set_type: str
-    duration: float | None = None
-    repetitions: int | None = None
-    weight: float | None = None
-    start_time: datetime | None = None
-    category: list[str | int | None] | None = None
-    category_subtype: list[str | int | None] | None = None
-    weight_display_unit: str | None = None
-    message_index: int | None = None
-    wkt_step_index: int | None = None
-
-    @field_validator("set_type")
+    @field_validator("category")
     @classmethod
-    def convert_set_type(cls, value):
-        return value if value is not None else "Unknown"
+    def convert_category(cls, value):
+        if value is None:
+            return UNKNOWN
+        if isinstance(value, str) and value in EXERCISE_CATEGORIES:
+            return EXERCISE_CATEGORIES[value]
+        return str(value)
 
 
-class SplitModel(BaseModel):
-    split_type: str
-    total_elapsed_time: float
-    total_timer_time: float
-    start_time: datetime
-
-    # I figured out what this fields are in my activities recorded with a
-    # Garmin Fenix 6s. For example: in split messages there's a key which value
-    # is 15 with heart rate's average.
-    avg_hr: int | None = Field(None, alias="15")
-    max_hr: int | None = Field(None, alias="16")
-    total_calories: int | None = Field(None, alias="28")
-    difficulty: int | None = Field(None, alias="70")
-    result: int | None = Field(None, alias="71")  # completed (3) or try (2)
-    discarded: int | None = Field(None, alias="80")  # discarded (0)
-
-
-class WorkoutModel(BaseModel):
-    message_index: int | None = None
-    sport: str | None = None
-    sub_sport: str | None = None
-    capabilities: int | None = None
-    num_valid_steps: int | None = None
-    wkt_name: str | None = None
-    pool_length: int | None = None
-    pool_length_unit: str | None = None
-
-    @field_validator("wkt_name")
-    @classmethod
-    def convert_wkt_name(cls, value):
-        if value is not None and isinstance(value, list):
-            return ", ".join(value)
-        return value
-
-
-class WorkoutStepModel(BaseModel):
+class WorkoutStep(BaseModel):
     message_index: int
 
     wkt_step_name: str | None = None
@@ -303,17 +175,671 @@ class WorkoutStepModel(BaseModel):
             return ", ".join(value)
         return value
 
+    def duration(self) -> WorkoutDuration:
+        return WorkoutDuration(
+            self.duration_type,
+            self.duration_value,
+            self.duration_time,
+            self.duration_distance,
+            self.duration_hr,
+            self.duration_calories,
+            self.duration_step,
+            self.duration_power,
+            self.duration_reps
+        )
 
-class MonitoringInfoModel(BaseModel):
+    def repeat(self) -> WorkoutRepeat:
+        return WorkoutRepeat(
+            self.repeat_steps,
+            self.repeat_time,
+            self.repeat_distance,
+            self.repeat_calories,
+            self.repeat_hr,
+            self.repeat_power
+        )
+
+    def target(self) -> WorkoutTarget:
+        return WorkoutTarget(
+            self.target_type,
+            self.target_value,
+            self.target_speed_zone,
+            self.target_hr_zone,
+            self.target_cadence_zone,
+            self.target_power_zone,
+            self.target_stroke_type
+        )
+
+    def secondary_target(self) -> WorkoutTarget:
+        return WorkoutTarget(
+            self.secondary_target_type,
+            self.secondary_target_value,
+            self.secondary_target_speed_zone,
+            self.secondary_target_hr_zone,
+            self.secondary_target_cadence_zone,
+            self.secondary_target_power_zone,
+            self.secondary_target_stroke_type
+        )
+
+    def custom_target(self) -> WorkoutCustomTarget:
+        return WorkoutCustomTarget(
+            self.custom_target_value_low,
+            self.custom_target_speed_low,
+            self.custom_target_heart_rate_low,
+            self.custom_target_cadence_low,
+            self.custom_target_power_low,
+            self.custom_target_value_high,
+            self.custom_target_speed_high,
+            self.custom_target_heart_rate_high,
+            self.custom_target_cadence_high,
+            self.custom_target_power_high
+        )
+
+    def secondary_custom_target(self) -> WorkoutCustomTarget:
+        return WorkoutCustomTarget(
+            self.secondary_custom_target_value_low,
+            self.secondary_custom_target_speed_low,
+            self.secondary_custom_target_heart_rate_low,
+            self.secondary_custom_target_cadence_low,
+            self.secondary_custom_target_power_low,
+            self.secondary_custom_target_value_high,
+            self.secondary_custom_target_speed_high,
+            self.secondary_custom_target_heart_rate_high,
+            self.secondary_custom_target_cadence_high,
+            self.secondary_custom_target_power_high
+        )
+
+    def exercise(self) -> WorkoutExercise:
+        return WorkoutExercise(
+            self.exercise_category, self.exercise_name, self.exercise_weight
+        )
+
+
+class Workout(BaseModel):
+    steps: list[WorkoutStep] = []
+    wkt_name: str = UNKNOWN
+    sport: str = UNKNOWN
+    sub_sport: str = UNKNOWN
+    message_index: int | None = None
+    capabilities: int | None = None
+    num_valid_steps: int | None = None
+    pool_length: int | None = None
+    pool_length_unit: str | None = None
+
+    @field_validator("wkt_name")
+    @classmethod
+    def convert_wkt_name(cls, value):
+        if value is not None and isinstance(value, list):
+            return ", ".join(value)
+        return value
+
+
+class Session(BaseModel):
+    message_index: int
     timestamp: datetime
-    local_timestamp: int | None = None
-    activity_type: list[str] | None = None
-    cycles_to_distance: list[float] | None = None
-    cycles_to_calories: list[float] | None = None
-    resting_metabolic_rate: int | None = None
+    start_time: datetime
+    total_elapsed_time: float
+    total_timer_time: float
+    sport: str
+    sub_sport: str
+
+    start_position_lat: int | None = None
+    start_position_long: int | None = None
+    end_position_lat: int | None = None
+    end_position_long: int | None = None
+
+    first_lap_index: int | None = None
+    num_laps: int | None = None
+
+    sport_profile_name: str | None = None
+    sport_index: int | None = None
+
+    total_distance: float | None = None
+    total_cycles: int | None = None
+    total_strides: int | None = None
+    enhanced_avg_speed: float | None = None
+    avg_speed: float | None = None
+    enhanced_max_speed: float | None = None
+    max_speed: float | None = None
+    avg_heart_rate: float | None = None
+    max_heart_rate: float | None = None
+    avg_cadence: float | None = None
+    avg_running_cadence: float | None = None
+    max_cadence: float | None = None
+    max_running_cadence: float | None = None
+    total_calories: float | None = None
+    total_ascent: float | None = None
+    total_descent: float | None = None
+    avg_temperature: float | None = None
+    max_temperature: float | None = None
+    min_temperature: float | None = None
+    enhanced_avg_respiration_rate: float | None = None
+    enhanced_max_respiration_rate: float | None = None
+    enhanced_min_respiration_rate: float | None = None
+
+    training_load_peak: float | None = None
+    total_training_effect: float | None = None
+    total_anaerobic_training_effect: float | None = None
+
+    avg_fractional_cadence: float | None = None
+    max_fractional_cadence: float | None = None
+    total_fractional_ascent: float | None = None
+    total_fractional_descent: float | None = None
 
 
-class MonitoringModel(BaseModel):
+class Activity(FitModel):
+    session: Session
+    workout: Workout | None = None
+    workout_steps: list[WorkoutStep] = []
+
+    @property
+    def name(self) -> str:
+        return self.session.sport
+
+    @property
+    def sport(self) -> str:
+        return self.session.sport
+
+    @property
+    def sub_sport(self) -> str:
+        return self.session.sub_sport
+
+    @property
+    def time(self) -> TimeStat:
+        return TimeStat(
+            timestamp=self.session.timestamp,
+            start_time=self.session.start_time,
+            elapsed=self.session.total_elapsed_time,
+            timer=self.session.total_timer_time
+        )
+
+    @property
+    def heart_rate(self) -> DoubleStat:
+        return DoubleStat(
+            max=self.session.max_heart_rate,
+            avg=self.session.avg_heart_rate
+        )
+
+    @property
+    def temperature(self) -> TripleStat:
+        return TripleStat(
+            max=self.session.max_temperature,
+            min=self.session.min_temperature,
+            avg=self.session.avg_temperature
+        )
+
+    @property
+    def total_calories(self) -> int:
+        return self.session.total_calories
+
+
+class Record(BaseModel):
+    timestamp: datetime
+    activity_type: str | None = None
+    position_lat: int | None = None
+    position_long: int | None = None
+    altitude: float | None = None
+    enhanced_altitude: float | None = None
+    heart_rate: int | None = None
+    cadence: int | None = None
+    distance: float | None = None
+    enhanced_distance: float | None = None
+    speed: float | None = None
+    enhanced_speed: float | None = None
+    power: int | None = None
+    grade: int | None = None
+    resistance: int | None = None
+    time_from_course: int | None = None
+    cycle_length: int | None = None
+    temperature: int | None = None
+    cycles: int | None = None
+    total_cycles: int | None = None
+    gps_accuracy: int | None = None
+    vertical_speed: int | None = None
+    calories: int | None = None
+    fractional_cadence: float | None = None
+    step_length: int | None = None
+    absolute_pressure: int | None = None
+    respiration_rate: float | None = None
+    enhanced_respiration_rate: float | None = None
+    current_stress: int | None = None
+    ascent_rate: int | None = None
+
+    compressed_speed_distance: list[str | int] | None = None
+    time_from_course: int | None = None
+    speed_1s: list[int] | None = None
+    compressed_accumulated_power: int | None = None
+    accumulated_power: int | None = None
+    left_right_balance: int | None = None
+    vertical_oscillation: int | None = None
+    stance_time_percent: int | None = None
+    stance_time: int | None = None
+    left_torque_effectiveness: int | None = None
+    right_torque_effectiveness: int | None = None
+    left_pedal_smoothness: int | None = None
+    right_pedal_smoothness: int | None = None
+    combined_pedal_smoothness: int | None = None
+    time128: int | None = None
+    stroke_type: str | None = None
+    zone: int | None = None
+    ball_speed: int | None = None
+    cadence256: int | None = None
+    fractional_cadence: float | None = None
+    total_hemoglobin_conc: int | None = None
+    total_hemoglobin_conc_min: int | None = None
+    total_hemoglobin_conc_max: int | None = None
+    saturated_hemoglobin_percent: int | None = None
+    saturated_hemoglobin_percent_min: int | None = None
+    saturated_hemoglobin_percent_max: int | None = None
+    device_index: int | None = None
+    left_pco: int | None = None
+    right_pco: int | None = None
+    left_power_phase: list[int] | None = None
+    left_power_phase_peak: list[int] | None = None
+    right_power_phase: list[int] | None = None
+    right_power_phase_peak: list[int] | None = None
+    battery_soc: int | None = None
+    motor_power: int | None = None
+    vertical_ratio: int | None = None
+    stance_time_balance: int | None = None
+    step_length: int | None = None
+    cycle_length16: float | None = None
+    absolute_pressure: int | None = None
+    depth: int | None = None
+    next_stop_depth: int | None = None
+    next_stop_time: int | None = None
+    time_to_surface: int | None = None
+    ndl_time: int | None = None
+    cns_load: int | None = None
+    n2_load: int | None = None
+    grit: float | None = None
+    flow: float | None = None
+    ebike_travel_range: int | None = None
+    ebike_battery_level: int | None = None
+    ebike_assist_mode: int | None = None
+    ebike_assist_level_percent: int | None = None
+    air_time_remaining: int | None = None
+    pressure_sac: int | None = None
+    volume_sac: int | None = None
+    rmv: int | None = None
+    po2: int | None = None
+    core_temperature: int | None = None
+
+    @property
+    def datetime_utc(self) -> datetime:
+        return self.timestamp
+
+    @property
+    def datetime_local(self) -> datetime:
+        try_to_compute_local_datetime(self.timestamp)
+
+    @property
+    def location(self) -> LocationRecordStat:
+        return LocationRecordStat(
+            lat=self.position_lat,
+            lon=self.position_long,
+            altitude=self.enhanced_altitude or self.altitude,
+            gps_accuracy=self.gps_accuracy
+        )
+
+
+class Lap(BaseModel):
+    message_index: int
+    timestamp: datetime
+
+    sport: str | None = None
+    sub_sport: str | None = None
+
+    start_position_lat: int | None = None
+    start_position_long: int | None = None
+    end_position_lat: int | None = None
+    end_position_long: int | None = None
+
+    total_elapsed_time: float | None = None
+    total_timer_time: float | None = None
+    total_moving_time: float | None = None
+
+    total_distance: float | None = None
+
+    start_time: datetime | None = None
+
+    avg_speed: float | None = None
+    enhanced_avg_speed: float | None = None
+    max_speed: float | None = None
+    enhanced_max_speed: float | None = None
+
+    avg_heart_rate: int | None = None
+    max_heart_rate: int | None = None
+    min_heart_rate: int | None = None
+
+    avg_cadence: int | None = None
+    avg_running_cadence: int | None = None
+    max_cadence: int | None = None
+    max_running_cadence: int | None = None
+
+    total_ascent: int | None = None
+    total_descent: int | None = None
+    avg_altitude: float | None = None
+    enhanced_avg_altitude: float | None = None
+    max_altitude: float | None = None
+    enhanced_max_altitude: float | None = None
+    min_altitude: float | None = None
+    enhanced_min_altitude: float | None = None
+    avg_grade: int | None = None
+    avg_pos_grade: int | None = None
+    avg_neg_grade: int | None = None
+    max_pos_grade: int | None = None
+    max_neg_grade: int | None = None
+
+    wkt_step_index: int | None = None
+
+    event: str | None = None
+    event_type: str | None = None
+
+    total_cycles: int | None = None
+    total_strides: int | None = None
+    total_strokes: int | None = None
+
+    total_calories: int | None = None
+    total_fat_calories: int | None = None
+
+    intensity: int | None = None
+    lap_trigger: int | str | None = None
+    gps_accuracy: int | None = None
+
+    avg_temperature: int | None = None
+    max_temperature: int | None = None
+    min_tempearture: int | None = None
+
+    avg_respiration_rate: float | None = None
+    enhanced_avg_respiration_rate: float | None = None
+    max_respiration_rate: float | None = None
+    enhanced_max_respiration_rate: float | None = None
+
+    @property
+    def time(self) -> TimeStat:
+        return TimeStat(
+            timestamp=self.timestamp,
+            start_time=self.start_time,
+            elapsed=self.total_elapsed_time,
+            timer=self.total_timer_time
+        )
+
+    @property
+    def speed(self) -> DoubleStat:
+        return DoubleStat(
+            max=self.enhanced_max_speed or self.max_speed,
+            avg=self.enhanced_avg_speed or self.avg_speed
+        )
+
+    @property
+    def heart_rate(self) -> DoubleStat:
+        return DoubleStat(max=self.max_heart_rate, avg=self.avg_heart_rate)
+
+    @property
+    def altitude(self) -> AltitudeStat:
+        return AltitudeStat(
+            max=self.enhanced_max_altitude or self.max_altitude,
+            min=self.enhanced_min_altitude or self.min_altitude,
+            gain=self.total_ascent,
+            loss=self.total_descent
+        )
+
+    @property
+    def cadence(self) -> DoubleStat:
+        return DoubleStat(
+            max=self.max_cadence or self.max_running_cadence,
+            avg=self.avg_cadence or self.avg_running_cadence
+        )
+
+    def start_location(self) -> LocationStat:
+        return LocationStat(
+            lat=self.start_position_lat, lon=self.start_position_long
+        )
+
+    def end_location(self) -> LocationStat:
+        return LocationStat(
+            lat=self.end_position_lat, lon=self.end_position_long
+        )
+
+
+class DistanceActivity(Activity):
+    records: list[Record]
+    laps: list[Lap] = []
+
+    @property
+    def altitudes(self) -> list[float]:
+        return [
+            record.enhanced_altitude or record.altitude for record in self.records
+            if record.enhanced_altitude or record.altitude
+        ]
+
+    @property
+    def total_distance(self) -> float | None:
+        return self.session.total_distance
+
+    @property
+    def speed(self) -> DoubleStat:
+        return DoubleStat(
+            max=self.session.enhanced_max_speed or self.session.max_speed,
+            avg=self.session.enhanced_avg_speed or self.session.avg_speed
+        )
+
+    @property
+    def cadence(self) -> DoubleStat:
+        return DoubleStat(
+            max=self.session.max_cadence or self.session.max_running_cadence,
+            avg=self.session.avg_cadence or self.session.avg_running_cadence
+        )
+
+    @property
+    def altitude(self) -> AltitudeStat:
+        return AltitudeStat(
+            max=max(self.altitudes),
+            min=min(self.altitudes),
+            gain=self.session.total_ascent,
+            loss=self.session.total_descent
+        )
+
+    @property
+    def total_strides(self) -> int | None:
+        self.session.total_strides
+
+    @property
+    def start_location(self) -> LocationStat:
+        return LocationStat(
+            lat=self.session.start_position_lat,
+            lon=self.session.start_position_long
+        )
+
+    @property
+    def end_location(self) -> LocationStat:
+        return LocationStat(
+            lat=self.session.end_position_lat,
+            lon=self.session.end_position_long
+        )
+
+
+class Split(BaseModel):
+    split_type: str
+    total_elapsed_time: float
+    total_timer_time: float
+    start_time: datetime
+
+    # I figured out what this fields are in my activities recorded with a
+    # Garmin Fenix 6s. For example: in split messages there's a key which value
+    # is 15 with heart rate's average.
+    avg_hr: int | None = Field(None, alias="15")
+    max_hr: int | None = Field(None, alias="16")
+    total_calories: int | None = Field(None, alias="28")
+    difficulty: int | None = Field(None, alias="70")
+    result: int | None = Field(None, alias="71")  # completed (3) or try (2)
+    discarded: int | None = Field(None, alias="80")  # discarded (0)
+
+
+class Climb(BaseModel):
+    split: Split
+
+    @property
+    def time(self) -> TimeStat:
+        return TimeStat(
+            timestamp=self.split.start_time,
+            start_time=self.split.start_time,
+            elapsed=self.split.total_elapsed_time,
+            timer=self.split.total_timer_time
+        )
+
+    @property
+    def split_type(self) -> SplitType:
+        return (
+            self.split.split_type if self.split.split_type in list(SplitType)
+            else SplitType.UNKNOWN
+        )
+
+    @property
+    def heart_rate(self) -> DoubleStat:
+        return DoubleStat(max=self.split.max_hr, avg=self.split.avg_hr)
+
+    @property
+    def total_calories(self) -> int:
+        return self.split.total_calories
+
+    @property
+    def difficulty(self) -> int:
+        return self.split.difficulty
+
+    @property
+    def result(self) -> ClimbResult:
+        return (
+            ClimbResult.COMPLETED if self.split.result == 3 else (
+                ClimbResult.ATTEMPTED
+                if self.split.result == 2 else ClimbResult.DISCARDED
+            )
+        )
+
+
+class ClimbActivity(Activity):
+    splits: list[Split] = []
+
+    @property
+    def climbs(self) -> list[Climb]:
+        return [Climb(split=s) for s in self.splits]
+
+
+class Set(BaseModel):
+    timestamp: datetime
+    set_type: SetType
+    duration: float | None = None
+    repetitions: int | None = None
+    weight: float | None = None
+    start_time: datetime | None = None
+    category: list[str | int | None] | None = None
+    category_subtype: list[str | int | None] | None = None
+    weight_display_unit: str | None = None
+    message_index: int | None = None
+    wkt_step_index: int | None = None
+
+    @field_validator("set_type")
+    @classmethod
+    def convert_set_type(cls, value):
+        return value if value in list(SetType) else SetType.UNKNOWN
+
+    @property
+    def order(self) -> int:
+        return self.message_index or 0
+
+    @property
+    def exercise(self) -> str:
+        if self.category is None:
+            return UNKNOWN
+
+        categories = [
+            EXERCISE_CATEGORIES.get(value, str(value))
+            if value is not None else value for value in self.category
+        ]
+        valid_categories = [cat for cat in categories if cat is not None]
+
+        return UNKNOWN if not valid_categories else ", ".join(valid_categories)
+
+    @property
+    def time(self) -> TimeStat:
+        return TimeStat(
+            timestamp=self.timestamp,
+            start_time=self.start_time,
+            elapsed=self.duration,
+            timer=self.duration
+        )
+
+    def is_active_set(self) -> bool:
+        """Check if this set is an active one.
+
+        A set can be an active or a rest one.
+        """
+        return self.set_type == SetType.ACTIVE
+
+
+class SetActivity(Activity):
+    sets: list[Set] = []
+
+
+class TransitionActivity(Activity):
+    pass
+
+
+class MultisportActivity(FitModel):
+    sessions: list[Session]
+    records: list[Record]
+    laps: list[Lap]
+
+    @property
+    def activities(self) -> list[Activity]:
+        activity_list: list[Activity] = []
+        for session in self.sessions:
+            if session.sport == TRANSITION_SPORT:
+                activity = TransitionActivity(
+                    fit_file_path=self.fit_file_path,
+                    file_id=self.file_id,
+                    session=session
+                )
+            elif is_distance_sport(session.sport):
+                session_records, session_laps = self.filter_by_session(session)
+                activity = DistanceActivity(
+                    fit_file_path=self.fit_file_path,
+                    file_id=self.file_id,
+                    session=session,
+                    workout=None,
+                    workout_steps=[],
+                    records=session_records,
+                    laps=session_laps
+                )
+            else:
+                activity = Activity(self.fit_file_path, Activity(session=session))
+            activity_list.append(activity)
+        return activity_list
+
+    def filter_by_session(self, session: Session) -> RecordsAndLaps:
+        if not isinstance(session.start_time, datetime):
+            return RecordsAndLaps([], [])
+        if not isinstance(session.total_timer_time, int | float):
+            return RecordsAndLaps([], [])
+
+        datetime_from: datetime = session.start_time
+        datetime_to: datetime = (
+            session.start_time + timedelta(seconds=session.total_timer_time)
+        )
+
+        return RecordsAndLaps(
+            [
+                record for record in self.records
+                if datetime_from <= record.timestamp <= datetime_to
+            ],
+            [
+                lap for lap in self.laps
+                if datetime_from <= lap.timestamp <= datetime_to
+            ]
+        )
+
+
+class Monitoring(BaseModel):
     timestamp: datetime | None = None
     # "device_index",
     calories: int | None = None
@@ -360,23 +886,158 @@ class MonitoringModel(BaseModel):
         return local_dt.hour == 0 and local_dt.minute == 0 and local_dt.second == 0
 
 
-class MonitoringHrDataModel(BaseModel):
+@dataclass
+class Steps:
+    def __init__(self, monitoring: Monitoring) -> None:
+        self.steps: int = monitoring.steps or 0
+        self.distance: int = monitoring.distance or 0
+        self.calories: int = monitoring.active_calories or monitoring.calories or 0
+
+
+@dataclass
+class HeartRate:
+    def __init__(self, monitoring_date: date, monitoring: Monitoring) -> None:
+        self.heart_rate: int | None = monitoring.heart_rate
+        self.datetime_utc: datetime | None = combine_date_and_seconds(
+            monitoring_date, monitoring.timestamp_16
+        ) if monitoring.timestamp_16 is not None else None
+        self.datetime_local: datetime | None = (
+            try_to_compute_local_datetime(self.datetime_utc)
+            if self.datetime_utc is not None else None
+        )
+
+
+@dataclass
+class ActivityIntensity:
+    def __init__(self, monitoring_date: date, monitoring: Monitoring) -> None:
+        self.moderate_minutes: int = monitoring.moderate_activity_minutes or 0
+        self.vigorous_minutes: int = monitoring.vigorous_activity_minutes or 0
+        self.datetime_utc: datetime | None = combine_date_and_seconds(
+            monitoring_date, monitoring.timestamp_16
+        ) if monitoring.timestamp_16 is not None else None
+        self.datetime_local: datetime | None = (
+            try_to_compute_local_datetime(self.datetime_utc)
+            if self.datetime_utc is not None else None
+        )
+
+
+class MonitoringInfo(BaseModel):
+    timestamp: datetime
+    local_timestamp: int | None = None
+    activity_type: list[str] | None = None
+    cycles_to_distance: list[float] | None = None
+    cycles_to_calories: list[float] | None = None
+    resting_metabolic_rate: int | None = None
+
+
+class MonitoringHrData(BaseModel):
     timestamp: datetime
     resting_heart_rate: int
     current_day_resting_heart_rate: int
 
 
-class StressLevelModel(BaseModel):
+class StressLevel(BaseModel):
     stress_level_value: int
     stress_level_time: datetime
 
 
-class RespirationRateModel(BaseModel):
+class RespirationRate(BaseModel):
     timestamp: datetime
     respiration_rate: float  # breaths/min
 
 
-class HrvStatusSummaryModel(BaseModel):
+class Monitor(FitModel):
+    monitoring_info: MonitoringInfo
+    monitorings: list[Monitoring]
+    hr_datas: list[MonitoringHrData] = []
+    stress_levels: list[StressLevel] = []
+    respiration_rates: list[RespirationRate] = []
+
+    @property
+    def datetime_utc(self) -> datetime:
+        return self.monitoring_info.timestamp
+
+    @property
+    def datetime_local(self) -> datetime:
+        return try_to_compute_local_datetime(self.datetime_utc)
+
+    @property
+    def monitoring_date(self) -> date:
+        return date(
+            year=self.datetime_local.year,
+            month=self.datetime_local.month,
+            day=self.datetime_local.day
+        )
+
+    @property
+    def metabolic_calories(self) -> int:
+        return self.monitoring_info.resting_metabolic_rate or 0
+
+    @property
+    def activities(self) -> list[str]:
+        return self._activity_types_as_str()
+
+    @property
+    def active_calories(self) -> int:
+        return sum([
+            (value if value is not None else 0)
+            for m in self.monitorings if m.is_daily_log()
+            for value in [m.active_calories, m.calories] if value is not None
+        ])
+
+    @property
+    def total_calories(self) -> int:
+        return self.metabolic_calories + self.active_calories
+
+    @property
+    def steps(self) -> list[Steps]:
+        return [
+            Steps(m) for m in self.monitorings
+            if m.is_daily_log() and m.steps is not None
+        ]
+
+    @property
+    def total_steps(self) -> int:
+        return sum([step.steps for step in self.steps])
+
+    @property
+    def total_distance(self) -> int:
+        return sum([step.distance for step in self.steps])
+
+    @property
+    def heart_rates(self) -> list[HeartRate]:
+        return [
+            HeartRate(self.monitoring_date, m) for m in self.monitorings
+            if m.heart_rate is not None and m.timestamp_16 is not None
+        ]
+
+    @property
+    def activity_intensities(self) -> list[ActivityIntensity]:
+        return [
+            ActivityIntensity(self.monitoring_date, m) for m in self.monitorings
+            if m.timestamp_16 is not None and (
+                    m.moderate_activity_minutes is not None or
+                    m.vigorous_activity_minutes is not None
+            )
+        ]
+
+    def _activity_types_as_str(self) -> list[str]:
+        if self.monitoring_info.activity_type is None:
+            return []
+
+        activity_types: list[str] = []
+        for at in self.monitoring_info.activity_type:
+            if at in ACTIVITY_TYPES:
+                activity_types.append(ACTIVITY_TYPES[at])
+            elif type(at) is str:
+                activity_types.append(at)
+            else:
+                activity_types.append(ACTIVITY_TYPE_UNKNOWN)
+
+        return activity_types
+
+
+class HrvStatusSummary(BaseModel):
     timestamp: datetime | None = None
     weekly_average: float | None = None
     last_night_average: float | None = None
@@ -387,12 +1048,79 @@ class HrvStatusSummaryModel(BaseModel):
     status: str | int | None  # see HRV_STATUS in definitions
 
 
-class HrvValueModel(BaseModel):
+class HrvValue(BaseModel):
     timestamp: datetime
     value: int | None = None  # in ms (5 minute RMSSD)
 
 
-class SleepAssessmentModel(BaseModel):
+class Hrv(FitModel):
+    summary: HrvStatusSummary
+    values: list[HrvValue] = []
+
+    @property
+    def datetime_utc(self) -> datetime | None:
+        return self.summary.timestamp
+
+    @property
+    def weekly_average(self) -> float | None:
+        return self.summary.weekly_average
+
+    @property
+    def last_night_average(self) -> float | None:
+        return self.summary.last_night_average
+
+    @property
+    def last_night_5_min_high(self) -> float | None:
+        return self.summary.last_night_5_min_high
+
+    @property
+    def baseline_low_upper(self) -> float | None:
+        return self.summary.baseline_low_upper
+
+    @property
+    def baseline_balanced_lower(self) -> float | None:
+        return self.summary.baseline_balanced_lower
+
+    @property
+    def baseline_balanced_upper(self) -> float | None:
+        return self.summary.baseline_balanced_upper
+
+    @property
+    def status(self) -> str:
+        if isinstance(self.summary.status, int):
+            return (
+                HRV_STATUS[self.summary.status]
+                if self.summary.status in HRV_STATUS
+                else HRV_STATUS[0]
+            )
+        return self.summary.status
+
+
+class SleepLevel(BaseModel):
+    timestamp: datetime
+    sleep_level: str | int | None = None  # see SLEEP_LEVEL in definitions
+
+    @property
+    def datetime_utc(self) -> datetime:
+        return self.timestamp
+
+    @property
+    def datetime_local(self) -> datetime:
+        return try_to_compute_local_datetime(self.timestamp)
+
+    @property
+    def level(self) -> str:
+        return (
+            self.sleep_level
+            if isinstance(self.sleep_level, str)
+            else (
+                SLEEP_LEVEL[self.sleep_level]
+                if self.sleep_level in SLEEP_LEVEL else SLEEP_LEVEL[0]
+            )
+        )
+
+
+class SleepAssessment(BaseModel):
     combined_awake_score: int | None = None
     awake_time_score: int | None = None
     awakenings_count_score: int | None = None
@@ -409,54 +1137,66 @@ class SleepAssessmentModel(BaseModel):
     average_stress_during_sleep: float | None = None
 
 
-class SleepLevelModel(BaseModel):
-    timestamp: datetime
-    sleep_level: str | int | None = None  # see SLEEP_LEVEL in definitions
+class Sleep(FitModel):
+    assessment: SleepAssessment
+    levels: list[SleepLevel] = []
 
+    @property
+    def dates(self) -> list[date]:
+        return sorted(set([level.datetime_utc.date() for level in self.levels]))
 
-class ActivityModel(BaseModel):
-    file_id: FileIdModel
-    session: SessionModel
-    workout: WorkoutModel | None = None,
-    workout_steps: list[WorkoutStepModel] = []
+    @property
+    def combined_awake_score(self) -> int | None:
+        return self.assessment.combined_awake_score
 
+    @property
+    def awake_time_score(self) -> int | None:
+        return self.assessment.awake_time_score
 
-class MultisportActivityModel(BaseModel):
-    file_id: FileIdModel
-    sessions: list[SessionModel]
-    records: list[RecordModel]
-    laps: list[LapModel]
+    @property
+    def awakenings_count_score(self) -> int | None:
+        return self.assessment.awakenings_count_score
 
+    @property
+    def deep_sleep_score(self) -> int | None:
+        return self.assessment.deep_sleep_score
 
-class DistanceActivityModel(ActivityModel):
-    records: list[RecordModel]
-    laps: list[LapModel] = []
+    @property
+    def sleep_duration_score(self) -> int | None:
+        return self.assessment.sleep_duration_score
 
+    @property
+    def light_sleep_score(self) -> int | None:
+        return self.assessment.light_sleep_score
 
-class ClimbActivityModel(ActivityModel):
-    splits: list[SplitModel] = []
+    @property
+    def overall_sleep_score(self) -> int | None:
+        return self.assessment.overall_sleep_score
 
+    @property
+    def sleep_quality_score(self) -> int | None:
+        return self.assessment.sleep_quality_score
 
-class SetActivityModel(ActivityModel):
-    sets: list[SetModel] = []
+    @property
+    def sleep_recovery_score(self) -> int | None:
+        return self.assessment.sleep_recovery_score
 
+    @property
+    def rem_sleep_score(self) -> int | None:
+        return self.assessment.rem_sleep_score
 
-class MonitorModel(BaseModel):
-    file_id: FileIdModel
-    monitoring_info: MonitoringInfoModel
-    monitorings: list[MonitoringModel]
-    hr_datas: list[MonitoringHrDataModel] = []
-    stress_levels: list[StressLevelModel] = []
-    respiration_rates: list[RespirationRateModel] = []
+    @property
+    def sleep_restlessness_score(self) -> int | None:
+        return self.assessment.sleep_restlessness_score
 
+    @property
+    def awakenings_count(self) -> int | None:
+        return self.assessment.awakenings_count
 
-class HrvModel(BaseModel):
-    file_id: FileIdModel
-    summary: HrvStatusSummaryModel
-    values: list[HrvValueModel] = []
+    @property
+    def interruptions_score(self) -> int | None:
+        return self.assessment.interruptions_score
 
-
-class SleepModel(BaseModel):
-    file_id: FileIdModel
-    assessment: SleepAssessmentModel
-    levels: list[SleepLevelModel] = []
+    @property
+    def average_stress_during_sleep(self) -> float | None:
+        return self.assessment.average_stress_during_sleep

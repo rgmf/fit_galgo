@@ -1,17 +1,16 @@
 from datetime import datetime
 
 from fit_galgo.galgo import FitGalgo
-from fit_galgo.fit.results import FitHrv
-from fit_galgo.fit.models import FileIdModel
+from fit_galgo.fit.models import FileId, Hrv
 
 
 def assert_is_an_hrv(path_file: str) -> None:
     galgo = FitGalgo(path_file)
     hrv = galgo.parse()
 
-    assert isinstance(hrv, FitHrv)
-    assert hasattr(hrv.model, "file_id")
-    assert isinstance(hrv.model.file_id, FileIdModel)
+    assert isinstance(hrv, Hrv)
+    assert hasattr(hrv, "file_id")
+    assert isinstance(hrv.file_id, FileId)
     assert isinstance(hrv.datetime_utc, datetime)
     assert isinstance(hrv.weekly_average, float)
     assert isinstance(hrv.last_night_average, float)

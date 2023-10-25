@@ -6,37 +6,37 @@ from fit_galgo.fit.definitions import (
     BOULDERING_SUB_SPORT,
     ClimbResult
 )
-from fit_galgo.fit.results import (
-    FitResult,
+from fit_galgo.fit.models import (
+    FitModel,
     FitError,
-    FitActivity,
-    FitClimbActivity,
-    FitClimb
+    FileId,
+    Activity,
+    ClimbActivity,
+    Climb
 )
-from fit_galgo.fit.models import FileIdModel
 
 
-def assert_parse_without_errors(path_file: str) -> FitClimbActivity:
+def assert_parse_without_errors(path_file: str) -> ClimbActivity:
     galgo = FitGalgo(path_file)
-    activity: FitClimbActivity = galgo.parse()
+    activity: ClimbActivity = galgo.parse()
     assert not isinstance(activity, FitError)
-    assert isinstance(activity, FitResult)
-    assert isinstance(activity, FitActivity)
-    assert isinstance(activity, FitClimbActivity)
-    assert hasattr(activity.model, "file_id")
-    assert isinstance(activity.model.file_id, FileIdModel)
+    assert isinstance(activity, FitModel)
+    assert isinstance(activity, Activity)
+    assert isinstance(activity, ClimbActivity)
+    assert hasattr(activity, "file_id")
+    assert isinstance(activity.file_id, FileId)
     return activity
 
 
 def assert_sport(
-        activity: FitClimbActivity, expected_sport: str, expected_sub_sport: str
+        activity: ClimbActivity, expected_sport: str, expected_sub_sport: str
 ) -> None:
     assert activity.sport == expected_sport
     assert activity.sub_sport == expected_sub_sport
 
 
 def assert_is_climb_activity_with_minimal_required_stats(
-        activity: FitClimbActivity
+        activity: ClimbActivity
 ) -> None:
     """It asserts is a climb activity and it has required stats.
 
@@ -46,7 +46,7 @@ def assert_is_climb_activity_with_minimal_required_stats(
     - sub sport
     - time data
     """
-    assert isinstance(activity, FitClimbActivity)
+    assert isinstance(activity, ClimbActivity)
 
     assert activity.name is not None
     assert activity.sport is not None
@@ -59,7 +59,7 @@ def assert_is_climb_activity_with_minimal_required_stats(
     assert isinstance(activity.time.timer, float)
 
 
-def assert_climbs_data(climbs: list[FitClimb]) -> None:
+def assert_climbs_data(climbs: list[Climb]) -> None:
     assert climbs is not None
     assert len(climbs) > 0
     for climb in climbs:

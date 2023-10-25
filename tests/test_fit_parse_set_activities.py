@@ -5,32 +5,31 @@ from fit_galgo.fit.definitions import (
     TRAINING_SPORT,
     STRENGTH_TRAINING_SUB_SPORT
 )
-from fit_galgo.fit.results import (
-    FitActivity, FitSetActivity, FitSet, FitResult, FitError
+from fit_galgo.fit.models import (
+    FileId, Activity, SetActivity, Set, FitModel, FitError
 )
-from fit_galgo.fit.models import FileIdModel
 
 
-def assert_parse_without_errors(path_file: str) -> FitSetActivity:
+def assert_parse_without_errors(path_file: str) -> SetActivity:
     galgo = FitGalgo(path_file)
-    activity: FitSetActivity = galgo.parse()
+    activity: SetActivity = galgo.parse()
     assert not isinstance(activity, FitError)
-    assert isinstance(activity, FitResult)
-    assert isinstance(activity, FitActivity)
-    assert isinstance(activity, FitSetActivity)
-    assert hasattr(activity.model, "file_id")
-    assert isinstance(activity.model.file_id, FileIdModel)
+    assert isinstance(activity, FitModel)
+    assert isinstance(activity, Activity)
+    assert isinstance(activity, SetActivity)
+    assert hasattr(activity, "file_id")
+    assert isinstance(activity.file_id, FileId)
     return activity
 
 
 def assert_sport(
-        activity: FitSetActivity, expected_sport: str, expected_sub_sport: str
+        activity: SetActivity, expected_sport: str, expected_sub_sport: str
 ) -> None:
     assert activity.sport == expected_sport
     assert activity.sub_sport == expected_sub_sport
 
 
-def assert_is_set_activity_with_minimal_required_stats(activity: FitActivity) -> None:
+def assert_is_set_activity_with_minimal_required_stats(activity: Activity) -> None:
     """It asserts is a set activity and it has required stats.
 
     Required stats are:
@@ -39,7 +38,7 @@ def assert_is_set_activity_with_minimal_required_stats(activity: FitActivity) ->
     - sub sport
     - time data
     """
-    assert isinstance(activity, FitSetActivity)
+    assert isinstance(activity, SetActivity)
 
     assert activity.name is not None
     assert activity.sport is not None
@@ -52,7 +51,7 @@ def assert_is_set_activity_with_minimal_required_stats(activity: FitActivity) ->
     assert isinstance(activity.time.timer, float)
 
 
-def assert_required_set_data(s: FitSet) -> None:
+def assert_required_set_data(s: Set) -> None:
     assert s.order is not None and isinstance(s.order, int)
     assert s.exercise is not None and isinstance(s.exercise, str)
     assert s.time is not None
@@ -62,7 +61,7 @@ def assert_required_set_data(s: FitSet) -> None:
     assert isinstance(s.time.timer, float)
 
 
-def assert_sets_data(sets: list[FitSet]) -> None:
+def assert_sets_data(sets: list[Set]) -> None:
     assert sets is not None
     assert len(sets) > 0
 

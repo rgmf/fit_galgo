@@ -1,11 +1,12 @@
 from datetime import datetime
 
 from fit_galgo.galgo import FitGalgo
-from fit_galgo.fit.results import (
-    FitMultisportActivity,
-    FitDistanceActivity,
-    FitTransitionActivity,
-    FitResult,
+from fit_galgo.fit.models import (
+    FileId,
+    MultisportActivity,
+    DistanceActivity,
+    TransitionActivity,
+    FitModel,
     FitError
 )
 from fit_galgo.fit.definitions import (
@@ -18,22 +19,21 @@ from fit_galgo.fit.definitions import (
 from .test_fit_parse_distance_activities import (
     assert_is_distance_activity_with_required_stats
 )
-from fit_galgo.fit.models import FileIdModel
 
 
-def assert_parse_without_errors(path_file: str) -> FitMultisportActivity:
+def assert_parse_without_errors(path_file: str) -> MultisportActivity:
     galgo = FitGalgo(path_file)
-    activity: FitMultisportActivity = galgo.parse()
+    activity: MultisportActivity = galgo.parse()
     assert not isinstance(activity, FitError)
-    assert isinstance(activity, FitResult)
-    assert isinstance(activity, FitMultisportActivity)
-    assert hasattr(activity.model, "file_id")
-    assert isinstance(activity.model.file_id, FileIdModel)
+    assert isinstance(activity, FitModel)
+    assert isinstance(activity, MultisportActivity)
+    assert hasattr(activity, "file_id")
+    assert isinstance(activity.file_id, FileId)
     return activity
 
 
 def assert_is_transition_activity_with_required_stats(
-        activity: FitTransitionActivity
+        activity: TransitionActivity
 ) -> None:
     """It asserts is a transition activity and it has required stats.
 
@@ -43,7 +43,7 @@ def assert_is_transition_activity_with_required_stats(
     - sub sport
     - time data
     """
-    assert isinstance(activity, FitTransitionActivity)
+    assert isinstance(activity, TransitionActivity)
 
     assert activity.name is not None
     assert activity.sport is not None
@@ -56,19 +56,19 @@ def assert_is_transition_activity_with_required_stats(
     assert isinstance(activity.time.timer, float)
 
 
-def assert_duathlon(activity: FitMultisportActivity, sports: list[tuple]) -> None:
-    assert isinstance(activity, FitMultisportActivity)
-    assert len(activity.fit_activities) == 5
-    assert isinstance(activity.fit_activities[0], FitDistanceActivity)
-    assert isinstance(activity.fit_activities[1], FitTransitionActivity)
-    assert isinstance(activity.fit_activities[2], FitDistanceActivity)
-    assert isinstance(activity.fit_activities[3], FitTransitionActivity)
-    assert isinstance(activity.fit_activities[4], FitDistanceActivity)
+def assert_duathlon(activity: MultisportActivity, sports: list[tuple]) -> None:
+    assert isinstance(activity, MultisportActivity)
+    assert len(activity.activities) == 5
+    assert isinstance(activity.activities[0], DistanceActivity)
+    assert isinstance(activity.activities[1], TransitionActivity)
+    assert isinstance(activity.activities[2], DistanceActivity)
+    assert isinstance(activity.activities[3], TransitionActivity)
+    assert isinstance(activity.activities[4], DistanceActivity)
 
-    for a, st in zip(activity.fit_activities, sports):
+    for a, st in zip(activity.activities, sports):
         assert a.sport == st[0]
         assert a.sub_sport == st[1]
-        if isinstance(a, FitTransitionActivity):
+        if isinstance(a, TransitionActivity):
             assert_is_transition_activity_with_required_stats(a)
         else:
             assert_is_distance_activity_with_required_stats(a)

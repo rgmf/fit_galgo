@@ -1,6 +1,6 @@
 from fit_galgo.galgo import FitGalgo
 from fit_galgo.fit.exceptions import NotSupportedFitFileException
-from fit_galgo.fit.results import FitError
+from fit_galgo.fit.models import FitError
 
 
 # def test_show_monitor_information() -> None:

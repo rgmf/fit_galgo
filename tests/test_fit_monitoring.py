@@ -1,19 +1,17 @@
 from datetime import datetime, timedelta, date
 
 from fit_galgo.galgo import FitGalgo
-from fit_galgo.fit.results import FitMonitor
-from fit_galgo.fit.models import MonitorModel, FileIdModel
+from fit_galgo.fit.models import Monitor, FileId
 
 
 def assert_monitoring_data(path_file: str) -> None:
     galgo = FitGalgo(path_file)
-    monitor: FitMonitor = galgo.parse()
+    monitor: Monitor = galgo.parse()
 
     # Models
-    assert isinstance(monitor, FitMonitor)
-    assert isinstance(monitor.model, MonitorModel)
-    assert hasattr(monitor.model, "file_id")
-    assert isinstance(monitor.model.file_id, FileIdModel)
+    assert isinstance(monitor, Monitor)
+    assert hasattr(monitor, "file_id")
+    assert isinstance(monitor.file_id, FileId)
 
     # Dates and datetimes
     assert monitor.datetime_utc is not None
@@ -63,7 +61,7 @@ def assert_monitoring_data(path_file: str) -> None:
 
 def assert_activity_intensities(path_file: str, moderate_min: int, vigorous_min: int) -> None:
     galgo = FitGalgo(path_file)
-    monitor: FitMonitor = galgo.parse()
+    monitor: Monitor = galgo.parse()
 
     assert sum([ai.moderate_minutes for ai in monitor.activity_intensities]) == moderate_min
     assert sum([ai.vigorous_minutes for ai in monitor.activity_intensities]) == vigorous_min

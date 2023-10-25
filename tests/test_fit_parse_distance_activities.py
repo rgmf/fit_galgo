@@ -12,35 +12,35 @@ from fit_galgo.fit.definitions import (
     ROAD_SUB_SPORT,
     MOUNTAIN_SUB_SPORT
 )
-from fit_galgo.fit.results import (
-    FitResult,
+from fit_galgo.fit.models import (
+    FitModel,
     FitError,
-    FitActivity,
-    FitDistanceActivity
+    FileId,
+    Activity,
+    DistanceActivity
 )
-from fit_galgo.fit.models import FileIdModel
 
 
-def assert_parse_without_errors(path_file: str) -> FitDistanceActivity:
+def assert_parse_without_errors(path_file: str) -> DistanceActivity:
     galgo = FitGalgo(path_file)
-    activity: FitDistanceActivity = galgo.parse()
+    activity: DistanceActivity = galgo.parse()
     assert not isinstance(activity, FitError)
-    assert isinstance(activity, FitResult)
-    assert isinstance(activity, FitActivity)
-    assert isinstance(activity, FitDistanceActivity)
-    assert hasattr(activity.model, "file_id")
-    assert isinstance(activity.model.file_id, FileIdModel)
+    assert isinstance(activity, FitModel)
+    assert isinstance(activity, Activity)
+    assert isinstance(activity, DistanceActivity)
+    assert hasattr(activity, "file_id")
+    assert isinstance(activity.file_id, FileId)
     return activity
 
 
 def assert_sport(
-        activity: FitDistanceActivity, expected_sport: str, expected_sub_sport: str
+        activity: DistanceActivity, expected_sport: str, expected_sub_sport: str
 ) -> None:
     assert activity.sport == expected_sport
     assert activity.sub_sport == expected_sub_sport
 
 
-def assert_is_distance_activity_with_required_stats(activity: FitActivity) -> None:
+def assert_is_distance_activity_with_required_stats(activity: Activity) -> None:
     """It asserts is a distance activity and it has required stats.
 
     Required stats are:
@@ -51,7 +51,7 @@ def assert_is_distance_activity_with_required_stats(activity: FitActivity) -> No
     - total distance
     - speed
     """
-    assert isinstance(activity, FitDistanceActivity)
+    assert isinstance(activity, DistanceActivity)
 
     assert activity.name is not None
     assert activity.sport is not None

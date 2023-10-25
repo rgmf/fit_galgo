@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
 
 from fit_galgo.galgo import FitGalgo
-from fit_galgo.fit.results import FitSleep, FitSleepLevel
+from fit_galgo.fit.models import Sleep, SleepLevel
 
 
 def sleep(path_file: str) -> None:
     galgo = FitGalgo(path_file)
-    sleep: FitSleep = galgo.parse()
+    sleep: Sleep = galgo.parse()
 
-    assert isinstance(sleep, FitSleep)
+    assert isinstance(sleep, Sleep)
     assert len(sleep.dates) == 2
     assert sleep.dates[1] - sleep.dates[0] == timedelta(days=1)
     assert isinstance(sleep.combined_awake_score, int)
@@ -27,7 +27,7 @@ def sleep(path_file: str) -> None:
     assert isinstance(sleep.average_stress_during_sleep, float)
     assert len(sleep.levels) > 0
     for level in sleep.levels:
-        assert isinstance(level, FitSleepLevel)
+        assert isinstance(level, SleepLevel)
         assert isinstance(level.datetime_utc, datetime)
         assert isinstance(level.datetime_local, datetime)
         assert isinstance(level.level, str)
