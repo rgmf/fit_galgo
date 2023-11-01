@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from collections import namedtuple
 
-from pydantic import BaseModel, field_validator, Field, ConfigDict
+from pydantic import BaseModel, field_validator, Field, ConfigDict, AliasChoices
 
 from fit_galgo.fit.definitions import (
     HRV_STATUS,
@@ -64,7 +64,7 @@ RecordsAndLaps = namedtuple("RecordsAndLaps", ["records", "laps"])
 
 
 class FileId(BaseModel):
-    file_type: str | int = Field(alias="type")
+    file_type: str | int = Field(validation_alias=AliasChoices("type", "file_type"))
     serial_number: int | None = None
     time_created: datetime | None = None
     manufacturer: str | None = None
