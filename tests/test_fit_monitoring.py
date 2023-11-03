@@ -1,7 +1,16 @@
 from datetime import datetime, timedelta, date
 
 from fit_galgo.galgo import FitGalgo
-from fit_galgo.fit.models import Monitor, FileId
+from fit_galgo.fit.models import Monitor, FileId, MonitoringInfo, Monitoring
+
+
+def assert_monitoring_info(mi: MonitoringInfo) -> None:
+    assert mi.timestamp is not None
+    assert isinstance(mi.timestamp, datetime)
+
+
+def assert_monitoring(m: Monitoring) -> None:
+    assert "is_daily_log" in m.model_dump()
 
 
 def assert_monitoring_data(path_file: str) -> None:
@@ -29,6 +38,13 @@ def assert_monitoring_data(path_file: str) -> None:
         monitor.datetime_local.month == local_date.month and
         monitor.datetime_local.day == local_date.day
     )
+
+    # Monitoring info
+    assert_monitoring_info(monitor.monitoring_info)
+
+    # Monitorings
+    for monitoring in monitor.monitorings:
+        assert_monitoring(monitoring)
 
     # Activities and resting metabolic rate and calories
     assert "walking" in monitor.activities

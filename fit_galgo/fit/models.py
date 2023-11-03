@@ -2,7 +2,14 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from collections import namedtuple
 
-from pydantic import BaseModel, field_validator, Field, ConfigDict, AliasChoices
+from pydantic import (
+    BaseModel,
+    field_validator,
+    Field,
+    ConfigDict,
+    AliasChoices,
+    computed_field
+)
 
 from fit_galgo.fit.definitions import (
     HRV_STATUS,
@@ -872,6 +879,8 @@ class Monitoring(BaseModel):
     moderate_activity_minutes: int | None = None
     vigorous_activity_minutes: int | None = None
 
+    @computed_field
+    @property
     def is_daily_log(self) -> bool:
         """Check if datetime is a daily log.
 
@@ -953,14 +962,17 @@ class Monitor(FitModel):
     stress_levels: list[StressLevel] = []
     respiration_rates: list[RespirationRate] = []
 
+    @computed_field
     @property
     def datetime_utc(self) -> datetime:
         return self.monitoring_info.timestamp
 
+    @computed_field
     @property
     def datetime_local(self) -> datetime:
         return try_to_compute_local_datetime(self.datetime_utc)
 
+    @computed_field
     @property
     def monitoring_date(self) -> date:
         return date(
@@ -969,41 +981,49 @@ class Monitor(FitModel):
             day=self.datetime_local.day
         )
 
+    @computed_field
     @property
     def metabolic_calories(self) -> int:
         return self.monitoring_info.resting_metabolic_rate or 0
 
+    @computed_field
     @property
     def activities(self) -> list[str]:
         return self._activity_types_as_str()
 
+    @computed_field
     @property
     def active_calories(self) -> int:
         return sum([
             (value if value is not None else 0)
-            for m in self.monitorings if m.is_daily_log()
+            for m in self.monitorings if m.is_daily_log
             for value in [m.active_calories, m.calories] if value is not None
         ])
 
+    @computed_field
     @property
     def total_calories(self) -> int:
         return self.metabolic_calories + self.active_calories
 
+    @computed_field
     @property
     def steps(self) -> list[Steps]:
         return [
             Steps(m) for m in self.monitorings
-            if m.is_daily_log() and m.steps is not None
+            if m.is_daily_log and m.steps is not None
         ]
 
+    @computed_field
     @property
     def total_steps(self) -> int:
         return sum([step.steps for step in self.steps])
 
+    @computed_field
     @property
     def total_distance(self) -> int:
         return sum([step.distance for step in self.steps])
 
+    @computed_field
     @property
     def heart_rates(self) -> list[HeartRate]:
         return [
@@ -1011,6 +1031,7 @@ class Monitor(FitModel):
             if m.heart_rate is not None and m.timestamp_16 is not None
         ]
 
+    @computed_field
     @property
     def activity_intensities(self) -> list[ActivityIntensity]:
         return [
@@ -1085,6 +1106,7 @@ class Hrv(FitModel):
     def baseline_balanced_upper(self) -> float | None:
         return self.summary.baseline_balanced_upper
 
+    @computed_field
     @property
     def status(self) -> str:
         if isinstance(self.summary.status, int):
@@ -1104,10 +1126,12 @@ class SleepLevel(BaseModel):
     def datetime_utc(self) -> datetime:
         return self.timestamp
 
+    @computed_field
     @property
     def datetime_local(self) -> datetime:
         return try_to_compute_local_datetime(self.timestamp)
 
+    @computed_field
     @property
     def level(self) -> str:
         return (
@@ -1141,6 +1165,7 @@ class Sleep(FitModel):
     assessment: SleepAssessment
     levels: list[SleepLevel] = []
 
+    @computed_field
     @property
     def dates(self) -> list[date]:
         return sorted(set([level.datetime_utc.date() for level in self.levels]))
