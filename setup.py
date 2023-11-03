@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="fit_galgo",
-    version="0.2.1",
+    version="0.2.2",
     author="Román Martínez",
     author_email="rgmf@riseup.net",
     description="Descripción de tu proyecto",
