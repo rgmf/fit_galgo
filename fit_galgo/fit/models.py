@@ -1166,8 +1166,12 @@ class Sleep(FitModel):
 
     @computed_field
     @property
-    def dates(self) -> list[date]:
-        return sorted(set([level.datetime_utc.date() for level in self.levels]))
+    def dates(self) -> list[str]:
+        return sorted(
+            set(
+                [level.datetime_utc.date().strftime("%Y%m%d") for level in self.levels]
+            )
+        )
 
     @property
     def combined_awake_score(self) -> int | None:
