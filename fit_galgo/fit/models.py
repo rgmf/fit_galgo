@@ -972,7 +972,6 @@ class Monitor(FitModel):
     def datetime_local(self) -> datetime:
         return try_to_compute_local_datetime(self.datetime_utc)
 
-    @computed_field
     @property
     def monitoring_date(self) -> date:
         return date(
