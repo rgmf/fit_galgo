@@ -895,39 +895,23 @@ class Monitoring(BaseModel):
         return local_dt.hour == 0 and local_dt.minute == 0 and local_dt.second == 0
 
 
-@dataclass
-class Steps:
-    def __init__(self, monitoring: Monitoring) -> None:
-        self.steps: int = monitoring.steps or 0
-        self.distance: int = monitoring.distance or 0
-        self.calories: int = monitoring.active_calories or monitoring.calories or 0
+class Steps(BaseModel):
+    steps: int
+    distance: float
+    calories: int
 
 
-@dataclass
-class HeartRate:
-    def __init__(self, monitoring_date: date, monitoring: Monitoring) -> None:
-        self.heart_rate: int | None = monitoring.heart_rate
-        self.datetime_utc: datetime | None = combine_date_and_seconds(
-            monitoring_date, monitoring.timestamp_16
-        ) if monitoring.timestamp_16 is not None else None
-        self.datetime_local: datetime | None = (
-            try_to_compute_local_datetime(self.datetime_utc)
-            if self.datetime_utc is not None else None
-        )
+class HeartRate(BaseModel):
+    heart_rate: int
+    datetime_utc: datetime
+    datetime_local: datetime
 
 
-@dataclass
-class ActivityIntensity:
-    def __init__(self, monitoring_date: date, monitoring: Monitoring) -> None:
-        self.moderate_minutes: int = monitoring.moderate_activity_minutes or 0
-        self.vigorous_minutes: int = monitoring.vigorous_activity_minutes or 0
-        self.datetime_utc: datetime | None = combine_date_and_seconds(
-            monitoring_date, monitoring.timestamp_16
-        ) if monitoring.timestamp_16 is not None else None
-        self.datetime_local: datetime | None = (
-            try_to_compute_local_datetime(self.datetime_utc)
-            if self.datetime_utc is not None else None
-        )
+class ActivityIntensity(BaseModel):
+    moderate_minutes: int
+    vigorous_minutes: int
+    datetime_utc: datetime | None = None
+    datetime_local: datetime | None = None
 
 
 class MonitoringInfo(BaseModel):
@@ -1008,8 +992,11 @@ class Monitor(FitModel):
     @property
     def steps(self) -> list[Steps]:
         return [
-            Steps(m) for m in self.monitorings
-            if m.is_daily_log and m.steps is not None
+            Steps(
+                steps=m.steps,
+                distance=m.distance or 0,
+                calories=m.active_calories or m.calories or 0
+            ) for m in self.monitorings if m.is_daily_log and m.steps
         ]
 
     @computed_field
@@ -1026,15 +1013,43 @@ class Monitor(FitModel):
     @property
     def heart_rates(self) -> list[HeartRate]:
         return [
-            HeartRate(self.monitoring_date, m) for m in self.monitorings
-            if m.heart_rate is not None and m.timestamp_16 is not None
+            HeartRate(
+                heart_rate=m.heart_rate,
+                datetime_utc=combine_date_and_seconds(
+                    self.monitoring_date, m.timestamp_16
+                ),
+                datetime_local=try_to_compute_local_datetime(
+                    combine_date_and_seconds(self.monitoring_date, m.timestamp_16),
+                )
+            )
+            for m in self.monitorings
+            if (
+                    self.monitoring_date is not None and
+                    m.heart_rate is not None and
+                    m.timestamp_16 is not None
+            )
         ]
 
     @computed_field
     @property
     def activity_intensities(self) -> list[ActivityIntensity]:
         return [
-            ActivityIntensity(self.monitoring_date, m) for m in self.monitorings
+            ActivityIntensity(
+                moderate_minutes=m.moderate_activity_minutes or 0,
+                vigorous_minutes=m.vigorous_activity_minutes or 0,
+                datetime_utc=combine_date_and_seconds(
+                    self.monitoring_date, m.timestamp_16
+                ) if self.monitoring_date is not None else None,
+                datetime_local=(
+                    try_to_compute_local_datetime(
+                        combine_date_and_seconds(
+                            self.monitoring_date, m.timestamp_16
+                        ) if self.monitoring_date is not None else None
+                    )
+                    if self.datetime_utc is not None else None
+                )
+            )
+            for m in self.monitorings
             if m.timestamp_16 is not None and (
                     m.moderate_activity_minutes is not None or
                     m.vigorous_activity_minutes is not None
@@ -1065,7 +1080,7 @@ class HrvStatusSummary(BaseModel):
     baseline_low_upper: float | None = None
     baseline_balanced_lower: float | None = None
     baseline_balanced_upper: float | None = None
-    status: str | int | None  # see HRV_STATUS in definitions
+    status: str | int | None = None  # see HRV_STATUS in definitions
 
 
 class HrvValue(BaseModel):
