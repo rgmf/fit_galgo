@@ -33,7 +33,6 @@ def sleep(path_file: str) -> None:
     for level in sleep.levels:
         assert isinstance(level, SleepLevel)
         assert isinstance(level.datetime_utc, datetime)
-        assert isinstance(level.datetime_local, datetime)
         assert isinstance(level.level, str)
 
 

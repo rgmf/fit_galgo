@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from collections import namedtuple
+from zoneinfo import ZoneInfo
 
 from pydantic import (
     BaseModel,
@@ -24,10 +24,7 @@ from fit_galgo.fit.definitions import (
     EXERCISE_CATEGORIES,
     SetType
 )
-from fit_galgo.utils.date_utils import (
-    try_to_compute_local_datetime,
-    combine_date_and_seconds
-)
+from fit_galgo.utils.date_utils import combine_date_and_seconds
 
 DoubleStat = namedtuple("DoubleStat", ["max", "avg"])
 TripleStat = namedtuple("TripleStat", ["max", "min", "avg"])
@@ -82,6 +79,7 @@ class FileId(BaseModel):
 class FitModel(BaseModel):
     fit_file_path: str
     file_id: FileId
+    zone_info: str | None = None
 
 
 class FitError(BaseModel):
@@ -476,10 +474,6 @@ class Record(BaseModel):
         return self.timestamp
 
     @property
-    def datetime_local(self) -> datetime:
-        try_to_compute_local_datetime(self.timestamp)
-
-    @property
     def location(self) -> LocationRecordStat:
         return LocationRecordStat(
             lat=self.position_lat,
@@ -805,6 +799,7 @@ class MultisportActivity(FitModel):
                 activity = TransitionActivity(
                     fit_file_path=self.fit_file_path,
                     file_id=self.file_id,
+                    zone_info=self.zone_info,
                     session=session
                 )
             elif is_distance_sport(session.sport):
@@ -812,6 +807,7 @@ class MultisportActivity(FitModel):
                 activity = DistanceActivity(
                     fit_file_path=self.fit_file_path,
                     file_id=self.file_id,
+                    zone_info=self.zone_info,
                     session=session,
                     workout=None,
                     workout_steps=[],
@@ -879,21 +875,6 @@ class Monitoring(BaseModel):
     moderate_activity_minutes: int | None = None
     vigorous_activity_minutes: int | None = None
 
-    @computed_field
-    @property
-    def is_daily_log(self) -> bool:
-        """Check if datetime is a daily log.
-
-        In monitoring messages the timestamp must align to logging interval, for
-        example, time must be 00:00:00 for daily log.
-
-        It returns True if utc_dt has 00:00:00 time in the local datetime.
-        """
-        if not self.timestamp:
-            return False
-        local_dt: datetime = try_to_compute_local_datetime(self.timestamp)
-        return local_dt.hour == 0 and local_dt.minute == 0 and local_dt.second == 0
-
 
 class Steps(BaseModel):
     steps: int
@@ -946,6 +927,21 @@ class Monitor(FitModel):
     stress_levels: list[StressLevel] = []
     respiration_rates: list[RespirationRate] = []
 
+    def is_daily_log(self, dt_utc: datetime) -> bool:
+        """Check if datetime is a daily log.
+
+        In monitoring messages the timestamp must align to logging interval, for
+        example, time must be 00:00:00 for daily log.
+
+        It returns True if utc_dt has 00:00:00 time in the local datetime.
+        """
+        if not dt_utc:
+            return False
+        local_dt: datetime = dt_utc.astimezone(
+            ZoneInfo(self.zone_info) if self.zone_info else None
+        )
+        return local_dt.hour == 0 and local_dt.minute == 0 and local_dt.second == 0
+
     @computed_field
     @property
     def datetime_utc(self) -> datetime:
@@ -954,7 +950,9 @@ class Monitor(FitModel):
     @computed_field
     @property
     def datetime_local(self) -> datetime:
-        return try_to_compute_local_datetime(self.datetime_utc)
+        return self.datetime_utc.astimezone(
+            ZoneInfo(self.zone_info) if self.zone_info else None
+        )
 
     @property
     def monitoring_date(self) -> date:
@@ -979,7 +977,7 @@ class Monitor(FitModel):
     def active_calories(self) -> int:
         return sum([
             (value if value is not None else 0)
-            for m in self.monitorings if m.is_daily_log
+            for m in self.monitorings if self.is_daily_log(m.timestamp)
             for value in [m.active_calories, m.calories] if value is not None
         ])
 
@@ -996,7 +994,7 @@ class Monitor(FitModel):
                 steps=m.steps,
                 distance=m.distance or 0,
                 calories=m.active_calories or m.calories or 0
-            ) for m in self.monitorings if m.is_daily_log and m.steps
+            ) for m in self.monitorings if self.is_daily_log(m.timestamp) and m.steps
         ]
 
     @computed_field
@@ -1018,9 +1016,9 @@ class Monitor(FitModel):
                 datetime_utc=combine_date_and_seconds(
                     self.monitoring_date, m.timestamp_16
                 ),
-                datetime_local=try_to_compute_local_datetime(
-                    combine_date_and_seconds(self.monitoring_date, m.timestamp_16),
-                )
+                datetime_local=combine_date_and_seconds(
+                    self.monitoring_date, m.timestamp_16
+                ).astimezone(ZoneInfo(self.zone_info) if self.zone_info else None),
             )
             for m in self.monitorings
             if (
@@ -1033,21 +1031,19 @@ class Monitor(FitModel):
     @computed_field
     @property
     def activity_intensities(self) -> list[ActivityIntensity]:
+        def compute_datetime(dt: datetime | None, ts_16: int | None) -> datetime | None:
+            if dt is None or ts_16 is None:
+                return None
+            return combine_date_and_seconds(dt, ts_16)
+
         return [
             ActivityIntensity(
                 moderate_minutes=m.moderate_activity_minutes or 0,
                 vigorous_minutes=m.vigorous_activity_minutes or 0,
-                datetime_utc=combine_date_and_seconds(
+                datetime_utc=compute_datetime(self.monitoring_date, m.timestamp_16),
+                datetime_local=compute_datetime(
                     self.monitoring_date, m.timestamp_16
-                ) if self.monitoring_date is not None else None,
-                datetime_local=(
-                    try_to_compute_local_datetime(
-                        combine_date_and_seconds(
-                            self.monitoring_date, m.timestamp_16
-                        ) if self.monitoring_date is not None else None
-                    )
-                    if self.datetime_utc is not None else None
-                )
+                ).astimezone(ZoneInfo(self.zone_info) if self.zone_info else None)
             )
             for m in self.monitorings
             if m.timestamp_16 is not None and (
@@ -1139,11 +1135,6 @@ class SleepLevel(BaseModel):
     @property
     def datetime_utc(self) -> datetime:
         return self.timestamp
-
-    @computed_field
-    @property
-    def datetime_local(self) -> datetime:
-        return try_to_compute_local_datetime(self.timestamp)
 
     @computed_field
     @property

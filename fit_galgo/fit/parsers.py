@@ -38,7 +38,12 @@ from fit_galgo.fit.models import (
 
 class FitAbstractParser(ABC):
     @abstractmethod
-    def __init__(self, fit_file_path: str, messages: dict[str, list[BaseModel]]) -> None:
+    def __init__(
+            self,
+            fit_file_path: str,
+            messages: dict[str, list[BaseModel]],
+            zone_info: str | None = None
+    ) -> None:
         pass
 
     @abstractmethod
@@ -55,9 +60,15 @@ class FitActivityParser(FitAbstractParser):
     Also, it handles the errors that save into an array of errors.
     """
 
-    def __init__(self, fit_file_path: str, messages: dict[str, list[BaseModel]]) -> None:
+    def __init__(
+            self,
+            fit_file_path: str,
+            messages: dict[str, list[BaseModel]],
+            zone_info: str | None = None
+    ) -> None:
         self._fit_file_path: str = fit_file_path
         self._messages: dict[str, list] = messages
+        self._zone_info: str | None = zone_info
 
     def parse(self) -> Activity | FitError:
         if "FILE_ID" not in self._messages:
@@ -121,6 +132,7 @@ class FitActivityParser(FitAbstractParser):
             return MultisportActivity(
                 fit_file_path=self._fit_file_path,
                 file_id=file_id,
+                zone_info=self._zone_info,
                 sessions=[session_model for session_model in self._messages["SESSION"]],
                 records=[record_model for record_model in self._messages["RECORD"]],
                 laps=[lap_model for lap_model in self._messages["LAP"]]
@@ -136,6 +148,7 @@ class FitActivityParser(FitAbstractParser):
             return DistanceActivity(
                 fit_file_path=self._fit_file_path,
                 file_id=file_id,
+                zone_info=self._zone_info,
                 session=session,
                 records=[r for r in self._messages["RECORD"]],
                 laps=[lap for lap in self._messages["LAP"]],
@@ -147,6 +160,7 @@ class FitActivityParser(FitAbstractParser):
             return ClimbActivity(
                 fit_file_path=self._fit_file_path,
                 file_id=file_id,
+                zone_info=self._zone_info,
                 session=session,
                 splits=[s for s in self._messages["SPLIT"]],
                 workout=workout,
@@ -157,6 +171,7 @@ class FitActivityParser(FitAbstractParser):
             return SetActivity(
                 fit_file_path=self._fit_file_path,
                 file_id=file_id,
+                zone_info=self._zone_info,
                 session=session,
                 sets=[s for s in self._messages["SET"]],
                 workout=workout,
@@ -167,9 +182,15 @@ class FitActivityParser(FitAbstractParser):
 
 
 class FitMonitoringParser(FitAbstractParser):
-    def __init__(self, fit_file_path: str, messages: dict[str, list[BaseModel]]) -> None:
+    def __init__(
+            self,
+            fit_file_path: str,
+            messages: dict[str, list[BaseModel]],
+            zone_info: str | None = None
+    ) -> None:
         self._fit_file_path: str = fit_file_path
         self._messages: dict[str, list] = messages
+        self._zone_info: str | None = zone_info
 
     def parse(self) -> Monitor | FitError:
         if "FILE_ID" not in self._messages:
@@ -228,6 +249,7 @@ class FitMonitoringParser(FitAbstractParser):
             return Monitor(
                 fit_file_path=self._fit_file_path,
                 file_id=file_id,
+                zone_info=self._zone_info,
                 monitoring_info=monitoring_info,
                 monitorings=monitorings,
                 hr_datas=hr_datas,
@@ -239,9 +261,15 @@ class FitMonitoringParser(FitAbstractParser):
 
 
 class FitHrvParser(FitAbstractParser):
-    def __init__(self, fit_file_path: str, messages: dict[str, list[BaseModel]]) -> None:
+    def __init__(
+            self,
+            fit_file_path: str,
+            messages: dict[str, list[BaseModel]],
+            zone_info: str | None = None
+    ) -> None:
         self._fit_file_path: str = fit_file_path
         self._messages: dict[str, list[BaseModel]] = messages
+        self._zone_info: str | None = zone_info
 
     def parse(self) -> Hrv | FitError:
         if "FILE_ID" not in self._messages:
@@ -285,6 +313,7 @@ class FitHrvParser(FitAbstractParser):
             return Hrv(
                 fit_file_path=self._fit_file_path,
                 file_id=file_id,
+                zone_info=self._zone_info,
                 summary=summary,
                 values=values
             )
@@ -293,9 +322,15 @@ class FitHrvParser(FitAbstractParser):
 
 
 class FitSleepParser(FitAbstractParser):
-    def __init__(self, fit_file_path: str, messages: dict[str, list[BaseModel]]) -> None:
+    def __init__(
+            self,
+            fit_file_path: str,
+            messages: dict[str, list[BaseModel]],
+            zone_info: str | None = None
+    ) -> None:
         self._fit_file_path: str = fit_file_path
         self._messages: dict[str, list] = messages
+        self._zone_info: str | None = zone_info
 
     def parse(self) -> Sleep | FitError:
         if "FILE_ID" not in self._messages:
@@ -345,6 +380,7 @@ class FitSleepParser(FitAbstractParser):
             return Sleep(
                 fit_file_path=self._fit_file_path,
                 file_id=file_id,
+                zone_info=self._zone_info,
                 assessment=assessment,
                 levels=levels
             )

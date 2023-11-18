@@ -80,9 +80,13 @@ class FitGalgo:
     Once you have the object of this class then call parse method and it returns
     a FitResult that can be a FitError, FitActivity or whatever fit result
     depending on the type of the fit file.
+
+    :fit_file_path str: FIT's file path.
+    :zone_info str: IANA zone info string (for example: "Europe/Madrid").
     """
-    def __init__(self, fit_file_path: str) -> None:
+    def __init__(self, fit_file_path: str, zone_info: str | None = None) -> None:
         self._fit_file_path: str = fit_file_path
+        self._zone_info: str | None = zone_info
         self._messages: dict[str, list[BaseModel]] = {name: [] for name in MESSAGES}
         self._errors: list[Exception] = []
         self._has_critical_error: bool = False
@@ -117,7 +121,8 @@ class FitGalgo:
 
         parser = FIT_FILE_SUPPORTED[file_type]["parser_cls"](
             fit_file_path=self._fit_file_path,
-            messages=self._messages
+            messages=self._messages,
+            zone_info=self._zone_info
         )
         return parser.parse()
 
