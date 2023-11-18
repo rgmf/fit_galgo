@@ -67,6 +67,17 @@ def assert_monitoring_data(path_file: str) -> None:
     assert len(monitor.stress_levels) > 0
 
 
+def assert_monitoring_data_with_zone_info(path_file: str) -> None:
+    galgo = FitGalgo(path_file, "Europe/Madrid")
+    monitor: Monitor = galgo.parse()
+
+    assert (
+        monitor.datetime_utc.hour != monitor.datetime_local.hour or
+        monitor.datetime_utc.minute != monitor.datetime_local.minute or
+        monitor.datetime_utc.second != monitor.datetime_local.second
+    )
+
+
 def assert_activity_intensities(path_file: str, moderate_min: int, vigorous_min: int) -> None:
     galgo = FitGalgo(path_file)
     monitor: Monitor = galgo.parse()
@@ -78,6 +89,8 @@ def assert_activity_intensities(path_file: str, moderate_min: int, vigorous_min:
 def test_monitoring_with_all():
     assert_monitoring_data("tests/files/monitor1_with_all.fit")
     assert_monitoring_data("tests/files/monitor2_with_all.fit")
+
+    assert_monitoring_data_with_zone_info("tests/files/monitor1_with_all.fit")
 
 
 def test_activity_intensities():

@@ -885,19 +885,16 @@ class Steps(BaseModel):
 class HeartRate(BaseModel):
     heart_rate: int
     datetime_utc: datetime
-    datetime_local: datetime
 
 
 class ActivityIntensity(BaseModel):
     moderate_minutes: int
     vigorous_minutes: int
     datetime_utc: datetime | None = None
-    datetime_local: datetime | None = None
 
 
 class MonitoringInfo(BaseModel):
     timestamp: datetime
-    local_timestamp: int | None = None
     activity_type: list[str] | None = None
     cycles_to_distance: list[float] | None = None
     cycles_to_calories: list[float] | None = None
@@ -947,7 +944,6 @@ class Monitor(FitModel):
     def datetime_utc(self) -> datetime:
         return self.monitoring_info.timestamp
 
-    @computed_field
     @property
     def datetime_local(self) -> datetime:
         return self.datetime_utc.astimezone(
@@ -1015,10 +1011,7 @@ class Monitor(FitModel):
                 heart_rate=m.heart_rate,
                 datetime_utc=combine_date_and_seconds(
                     self.monitoring_date, m.timestamp_16
-                ),
-                datetime_local=combine_date_and_seconds(
-                    self.monitoring_date, m.timestamp_16
-                ).astimezone(ZoneInfo(self.zone_info) if self.zone_info else None),
+                )
             )
             for m in self.monitorings
             if (
@@ -1040,10 +1033,7 @@ class Monitor(FitModel):
             ActivityIntensity(
                 moderate_minutes=m.moderate_activity_minutes or 0,
                 vigorous_minutes=m.vigorous_activity_minutes or 0,
-                datetime_utc=compute_datetime(self.monitoring_date, m.timestamp_16),
-                datetime_local=compute_datetime(
-                    self.monitoring_date, m.timestamp_16
-                ).astimezone(ZoneInfo(self.zone_info) if self.zone_info else None)
+                datetime_utc=compute_datetime(self.monitoring_date, m.timestamp_16)
             )
             for m in self.monitorings
             if m.timestamp_16 is not None and (
