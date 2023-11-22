@@ -73,13 +73,13 @@ class FitActivityParser(FitAbstractParser):
     def parse(self) -> Activity | FitError:
         if "FILE_ID" not in self._messages:
             return FitError(
-                self._fit_file_path,
-                [NotFitMessageFoundException("file_id")]
+                fit_file_path=self._fit_file_path,
+                errors=[NotFitMessageFoundException("file_id")]
             )
         if len(self._messages["FILE_ID"]) != 1:
             return FitError(
-                self._fit_file_path,
-                [
+                fit_file_path=self._fit_file_path,
+                errors=[
                     UnexpectedDataMessageException(
                         "file_id",
                         "expected one message per file but got "
@@ -88,12 +88,15 @@ class FitActivityParser(FitAbstractParser):
                 ]
             )
         if not self._messages["SESSION"]:
-            return FitError(self._fit_file_path, [NotFitMessageFoundException("session")])
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=[NotFitMessageFoundException("session")]
+            )
 
         if not self._supported_sport_in_session():
             return FitError(
-                self._fit_file_path,
-                [
+                fit_file_path=self._fit_file_path,
+                errors=[
                     NotSupportedFitSportException(
                         self._messages["SESSION"][0].sport,
                         self._messages["SESSION"][0].sub_sport
@@ -104,9 +107,15 @@ class FitActivityParser(FitAbstractParser):
         try:
             return self._build_activity()
         except ValidationError as error:
-            return FitError(self._fit_file_path, [FitMessageValidationException(error)])
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=[FitMessageValidationException(error)]
+            )
         except NotSupportedFitSportException as error:
-            return FitError(self._fit_file_path, [error])
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=[error]
+            )
 
     def _supported_sport_in_session(self) -> bool:
         supported: list[str] = [n for k, v in SPORTS.items() for n in v.keys()]
@@ -200,8 +209,8 @@ class FitMonitoringParser(FitAbstractParser):
             )
         if len(self._messages["FILE_ID"]) != 1:
             return FitError(
-                self._fit_file_path,
-                [
+                fit_file_path=self._fit_file_path,
+                errors=[
                     UnexpectedDataMessageException(
                         "file_id",
                         "expected one message per file but got "
@@ -211,14 +220,14 @@ class FitMonitoringParser(FitAbstractParser):
             )
         if "MONITORING_INFO" not in self._messages:
             return FitError(
-                self._fit_file_path,
-                [NotFitMessageFoundException("monitoring_info")]
+                fit_file_path=self._fit_file_path,
+                errors=[NotFitMessageFoundException("monitoring_info")]
             )
 
         if len(self._messages["MONITORING_INFO"]) != 1:
             return FitError(
-                self._fit_file_path,
-                [
+                fit_file_path=self._fit_file_path,
+                errors=[
                     UnexpectedDataMessageException(
                         "monitoring_info",
                         "expected one message per file but got "
@@ -257,7 +266,10 @@ class FitMonitoringParser(FitAbstractParser):
                 respiration_rates=respiration_rates
             )
         except ValidationError as error:
-            return FitError(self._fit_file_path, [FitMessageValidationException(error)])
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=[FitMessageValidationException(error)]
+            )
 
 
 class FitHrvParser(FitAbstractParser):
@@ -274,13 +286,13 @@ class FitHrvParser(FitAbstractParser):
     def parse(self) -> Hrv | FitError:
         if "FILE_ID" not in self._messages:
             return FitError(
-                self._fit_file_path,
-                [NotFitMessageFoundException("file_id")]
+                fit_file_path=self._fit_file_path,
+                errors=[NotFitMessageFoundException("file_id")]
             )
         if len(self._messages["FILE_ID"]) != 1:
             return FitError(
-                self._fit_file_path,
-                [
+                fit_file_path=self._fit_file_path,
+                errors=[
                     UnexpectedDataMessageException(
                         "file_id",
                         "expected one message per file but got "
@@ -289,15 +301,21 @@ class FitHrvParser(FitAbstractParser):
                 ]
             )
         if "HRV_STATUS_SUMMARY" not in self._messages:
-            return FitError(self._fit_file_path, [NotFitMessageFoundException("hrv_status_summary")])
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=[NotFitMessageFoundException("hrv_status_summary")]
+            )
 
         if "HRV_VALUE" not in self._messages:
-            return FitError(self._fit_file_path, [NotFitMessageFoundException("hrv_value")])
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=[NotFitMessageFoundException("hrv_value")]
+            )
 
         if len(self._messages["HRV_STATUS_SUMMARY"]) != 1:
             return FitError(
-                self._fit_file_path,
-                [
+                fit_file_path=self._fit_file_path,
+                errors=[
                     UnexpectedDataMessageException(
                         "hrv_status_summary",
                         "expected one message per file but got "
@@ -318,7 +336,10 @@ class FitHrvParser(FitAbstractParser):
                 values=values
             )
         except ValidationError as error:
-            return FitError(self._fit_file_path, [FitMessageValidationException(error)])
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=[FitMessageValidationException(error)]
+            )
 
 
 class FitSleepParser(FitAbstractParser):
@@ -335,13 +356,13 @@ class FitSleepParser(FitAbstractParser):
     def parse(self) -> Sleep | FitError:
         if "FILE_ID" not in self._messages:
             return FitError(
-                self._fit_file_path,
-                [NotFitMessageFoundException("file_id")]
+                fit_file_path=self._fit_file_path,
+                errors=[NotFitMessageFoundException("file_id")]
             )
         if len(self._messages["FILE_ID"]) != 1:
             return FitError(
-                self._fit_file_path,
-                [
+                fit_file_path=self._fit_file_path,
+                errors=[
                     UnexpectedDataMessageException(
                         "file_id",
                         "expected one message per file but got "
@@ -351,20 +372,20 @@ class FitSleepParser(FitAbstractParser):
             )
         if "SLEEP_ASSESSMENT" not in self._messages:
             return FitError(
-                self._fit_file_path,
-                [NotFitMessageFoundException("sleep_assessment")]
+                fit_file_path=self._fit_file_path,
+                errors=[NotFitMessageFoundException("sleep_assessment")]
             )
 
         if "SLEEP_LEVEL" not in self._messages:
             return FitError(
-                self._fit_file_path,
-                [NotFitMessageFoundException("sleep_level")]
+                fit_file_path=self._fit_file_path,
+                errors=[NotFitMessageFoundException("sleep_level")]
             )
 
         if len(self._messages["SLEEP_ASSESSMENT"]) != 1:
             return FitError(
-                self._fit_file_path,
-                [
+                fit_file_path=self._fit_file_path,
+                errors=[
                     UnexpectedDataMessageException(
                         "sleep_assessment",
                         "expected one message per file but got "
@@ -385,4 +406,7 @@ class FitSleepParser(FitAbstractParser):
                 levels=levels
             )
         except ValidationError as error:
-            return FitError(self._fit_file_path, [FitMessageValidationException(error)])
+            return FitError(
+                fit_file_path=self._fit_file_path,
+                errors=[FitMessageValidationException(error)]
+            )

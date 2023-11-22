@@ -960,6 +960,19 @@ class Monitor(FitModel):
 
     @computed_field
     @property
+    def is_monitor_daily_log(self) -> bool:
+        """
+        Is datetime_utc in this monitor a daily log one.
+        """
+        if not self.datetime_utc:
+            return False
+        local_dt: datetime = self.datetime_utc.astimezone(
+            ZoneInfo(self.zone_info) if self.zone_info else None
+        )
+        return local_dt.hour == 0 and local_dt.minute == 0 and local_dt.second == 0
+
+    @computed_field
+    @property
     def metabolic_calories(self) -> int:
         return self.monitoring_info.resting_metabolic_rate or 0
 
