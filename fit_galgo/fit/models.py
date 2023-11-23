@@ -944,9 +944,10 @@ class Monitor(FitModel):
     def datetime_utc(self) -> datetime:
         return self.monitoring_info.timestamp
 
+    @computed_field
     @property
     def datetime_local(self) -> datetime:
-        return self.datetime_utc.astimezone(
+        return self.monitoring_info.timestamp.astimezone(
             ZoneInfo(self.zone_info) if self.zone_info else None
         )
 
@@ -957,19 +958,6 @@ class Monitor(FitModel):
             month=self.datetime_local.month,
             day=self.datetime_local.day
         )
-
-    @computed_field
-    @property
-    def is_monitor_daily_log(self) -> bool:
-        """
-        Is datetime_utc in this monitor a daily log one.
-        """
-        if not self.datetime_utc:
-            return False
-        local_dt: datetime = self.datetime_utc.astimezone(
-            ZoneInfo(self.zone_info) if self.zone_info else None
-        )
-        return local_dt.hour == 0 and local_dt.minute == 0 and local_dt.second == 0
 
     @computed_field
     @property
