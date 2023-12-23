@@ -377,6 +377,10 @@ class Activity(FitModel):
         return self.session.total_calories
 
 
+class MultiActivity(FitModel):
+    sessions: list[Session]
+
+
 class Record(BaseModel):
     timestamp: datetime
     activity_type: str | None = None
@@ -786,8 +790,7 @@ class TransitionActivity(Activity):
     pass
 
 
-class MultisportActivity(FitModel):
-    sessions: list[Session]
+class MultisportActivity(MultiActivity):
     records: list[Record]
     laps: list[Lap]
 
@@ -944,7 +947,6 @@ class Monitor(FitModel):
     def datetime_utc(self) -> datetime:
         return self.monitoring_info.timestamp
 
-    @computed_field
     @property
     def datetime_local(self) -> datetime:
         return self.monitoring_info.timestamp.astimezone(

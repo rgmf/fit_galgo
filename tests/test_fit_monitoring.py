@@ -35,6 +35,15 @@ def assert_monitoring_data(path_file: str) -> None:
         monitor.datetime_local.day == local_date.day
     )
 
+    # Monitor local datetime
+    assert monitor.datetime_local == monitor.datetime_utc
+    assert (
+        monitor.datetime_local.year > monitor.datetime_utc.year or
+        monitor.datetime_local.month > monitor.datetime_utc.month or
+        monitor.datetime_local.day > monitor.datetime_utc.day or
+        monitor.datetime_local.hour > monitor.datetime_utc.hour
+    )
+
     # Monitoring info
     assert_monitoring_info(monitor.monitoring_info)
 
