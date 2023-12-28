@@ -10,11 +10,11 @@ def sleep(path_file: str) -> None:
 
     assert isinstance(sleep, Sleep)
     assert len(sleep.dates) == 2
-    dt2: datetime = datetime.strptime(sleep.dates[1], "%Y%m%d")
-    dt1: datetime = datetime.strptime(sleep.dates[0], "%Y%m%d")
+    dt1: datetime = datetime.fromisoformat(sleep.dates[0])
+    dt2: datetime = datetime.fromisoformat(sleep.dates[1])
     assert isinstance(dt2, datetime)
     assert isinstance(dt1, datetime)
-    assert dt2 - dt1 == timedelta(days=1)
+    assert timedelta(days=0) <= (dt2 - dt1) <= timedelta(days=1)
     assert isinstance(sleep.combined_awake_score, int)
     assert isinstance(sleep.awake_time_score, int)
     assert isinstance(sleep.awakenings_count_score, int)
