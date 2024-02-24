@@ -673,12 +673,12 @@ class Split(BaseModel):
     # I figured out what this fields are in my activities recorded with a
     # Garmin Fenix 6s. For example: in split messages there's a key which value
     # is 15 with heart rate's average.
-    avg_hr: int | None = Field(None, alias="15")
-    max_hr: int | None = Field(None, alias="16")
-    total_calories: int | None = Field(None, alias="28")
-    difficulty: int | None = Field(None, alias="70")
-    result: int | None = Field(None, alias="71")  # completed (3) or try (2)
-    discarded: int | None = Field(None, alias="80")  # discarded (0)
+    avg_hr: int | None = Field(None, validation_alias=AliasChoices("15", "avg_hr"))
+    max_hr: int | None = Field(None, validation_alias=AliasChoices("16", "max_hr"))
+    total_calories: int | None = Field(None, validation_alias=AliasChoices("28", "total_calories"))
+    difficulty: int | None = Field(None, validation_alias=AliasChoices("70", "difficulty"))
+    result: int | None = Field(None, validation_alias=AliasChoices("71", "result"))  # completed (3) or try (2)
+    discarded: int | None = Field(None, validation_alias=AliasChoices("80", "discarded"))  # discarded (0)
 
 
 class Climb(BaseModel):

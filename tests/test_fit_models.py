@@ -85,7 +85,7 @@ def test_fit_session_need_sub_sport():
         })
 
 
-def test_fit_split_with_all_data_with_str_keys():
+def test_fit_split_with_all_data_with_str_int_keys():
     fit_split = Split(**{
         "253": 1035017335,
         "total_elapsed_time": 186.824,
@@ -117,6 +117,38 @@ def test_fit_split_with_all_data_with_str_keys():
     assert fit_split.discarded is None
 
 
+def test_fit_split_with_all_data_with_str_keys():
+    fit_split = Split(**{
+        "253": 1035017335,
+        "total_elapsed_time": 186.824,
+        "total_timer_time": 186.824,
+        "7": 0,
+        "start_time": datetime(2022, 10, 18, 7, 51, 54, tzinfo=timezone.utc),
+        "27": 1035014100,
+        "difficulty": 3,
+        "254": 0,
+        "79": 4,
+        "split_type": "climb_active",
+        "11": 31,
+        "12": 69,
+        "avg_hr": 88,
+        "max_hr": 100,
+        "total_calories": 28,
+        "33": 28,
+        "34": 27,
+        "69": 9,
+        "result": 3,
+        "discarded": 0
+    })
+    assert isinstance(fit_split, Split)
+    assert fit_split.avg_hr == 88
+    assert fit_split.max_hr == 100
+    assert fit_split.total_calories == 28
+    assert fit_split.difficulty == 3
+    assert fit_split.result == 3
+    assert fit_split.discarded == 0
+
+
 def test_fit_split_with_only_needed_data():
     fit_split = Split(**{
         "total_elapsed_time": 186.824,
@@ -133,7 +165,7 @@ def test_fit_split_with_only_needed_data():
     assert fit_split.discarded is None
 
 
-def test_fit_split_with_bad_data_typeh():
+def test_fit_split_with_bad_data_type():
     with pytest.raises(ValidationError):
         Split(**{
             "total_elapsed_time": 186.824,
