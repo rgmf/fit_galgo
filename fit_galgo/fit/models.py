@@ -1167,7 +1167,7 @@ class Sleep(FitModel):
     @property
     def dates(self) -> list[str]:
         sorted_dates: list[str] = sorted(
-            [level.datetime_utc.isoformat() for level in self.levels]
+            [level.datetime_utc for level in self.levels]
         )
         if sorted_dates == 0:
             return []

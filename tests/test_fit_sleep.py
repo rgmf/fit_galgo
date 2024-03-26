@@ -10,8 +10,8 @@ def sleep(path_file: str) -> None:
 
     assert isinstance(sleep, Sleep)
     assert len(sleep.dates) == 2
-    dt1: datetime = datetime.fromisoformat(sleep.dates[0])
-    dt2: datetime = datetime.fromisoformat(sleep.dates[1])
+    dt1: datetime = sleep.dates[0]
+    dt2: datetime = sleep.dates[1]
     assert isinstance(dt2, datetime)
     assert isinstance(dt1, datetime)
     assert timedelta(days=0) <= (dt2 - dt1) <= timedelta(days=1)
