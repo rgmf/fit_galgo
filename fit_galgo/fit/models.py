@@ -1165,8 +1165,8 @@ class Sleep(FitModel):
 
     @computed_field
     @property
-    def dates(self) -> list[str]:
-        sorted_dates: list[str] = sorted(
+    def dates(self) -> list[datetime]:
+        sorted_dates: list[datetime] = sorted(
             [level.datetime_utc for level in self.levels]
         )
         if sorted_dates == 0:
