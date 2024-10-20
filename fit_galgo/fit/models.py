@@ -614,8 +614,7 @@ class DistanceActivity(Activity):
     @property
     def altitudes(self) -> list[float]:
         return [
-            record.enhanced_altitude or record.altitude for record in self.records
-            if record.enhanced_altitude or record.altitude
+            record.enhanced_altitude or record.altitude or 0 for record in self.records
         ]
 
     @property
