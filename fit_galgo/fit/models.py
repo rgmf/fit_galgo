@@ -663,6 +663,26 @@ class DistanceActivity(Activity):
         )
 
 
+class LapActivity(DistanceActivity):
+    """Distance activity based on Lap(s).
+
+    Because of that elapsed time can be computed from laps.
+
+    An example of this kind of activities are lap swimming sport.
+    """
+    @property
+    def time(self) -> TimeStat:
+        return TimeStat(
+            timestamp=self.session.timestamp,
+            start_time=self.session.start_time,
+            elapsed=self._computed_total_elapsed_time() or self.session.total_elapsed_time,
+            timer=self.session.total_timer_time
+        )
+
+    def _computed_total_elapsed_time(self) -> float:
+        return sum([l.total_elapsed_time for l in self.laps if l.total_distance > 0])
+
+
 class Split(BaseModel):
     split_type: str
     total_elapsed_time: float

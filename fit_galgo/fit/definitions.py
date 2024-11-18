@@ -124,6 +124,7 @@ class ExerciseCategories(StrEnum):
 # Each category contains a list of sports, each with a list of sub-sport.
 # The values used for 'sport' and 'sub-sport' are from the FIT standard (Profile).
 DISTANCE_CATEGORY = "distance"
+LAP_CATEGORY = "lap"
 SET_CATEGORY = "set"
 CLIMB_CATEGORY = "climbing"
 MULTISPORT_CATEGORY = "multisport"
@@ -143,7 +144,7 @@ GENERIC_SUB_SPORT = "generic"
 TRAIL_SUB_SPORT = "trail"
 ROAD_SUB_SPORT = "road"
 MOUNTAIN_SUB_SPORT = "mountain"
-SWIMMING_SUB_SPORT = "lap_swimming"
+LAP_SWIMMING_SUB_SPORT = "lap_swimming"
 BOULDERING_SUB_SPORT = "bouldering"
 STRENGTH_TRAINING_SUB_SPORT = "strength_training"
 
@@ -152,8 +153,10 @@ SPORTS = {
         RUNNING_SPORT: [GENERIC_SUB_SPORT, TRAIL_SUB_SPORT],
         WALKING_SPORT: [GENERIC_SUB_SPORT],
         HIKING_SPORT: [GENERIC_SUB_SPORT],
-        CYCLING_SPORT: [GENERIC_SUB_SPORT, ROAD_SUB_SPORT, MOUNTAIN_SUB_SPORT],
-        SWIMMING_SPORT: [GENERIC_SUB_SPORT, SWIMMING_SUB_SPORT]
+        CYCLING_SPORT: [GENERIC_SUB_SPORT, ROAD_SUB_SPORT, MOUNTAIN_SUB_SPORT]
+    },
+    LAP_CATEGORY: {
+        SWIMMING_SPORT: [GENERIC_SUB_SPORT, LAP_SWIMMING_SUB_SPORT]
     },
     SET_CATEGORY: {
         TRAINING_SPORT: [GENERIC_SUB_SPORT, STRENGTH_TRAINING_SUB_SPORT]
@@ -198,6 +201,10 @@ SLEEP_LEVEL = {
 
 def is_distance_sport(sport: str) -> bool:
     return sport in SPORTS[DISTANCE_CATEGORY]
+
+
+def is_lap_sport(sport: str) -> bool:
+    return sport in SPORTS[LAP_CATEGORY]
 
 
 def is_climb_sport(sport: str) -> bool:

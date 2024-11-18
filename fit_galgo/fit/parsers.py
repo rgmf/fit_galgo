@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pydantic import ValidationError, BaseModel
 
 from fit_galgo.fit.definitions import (
-    SPORTS, is_distance_sport, is_climb_sport, is_set_sport
+    SPORTS, is_distance_sport, is_lap_sport, is_climb_sport, is_set_sport
 )
 from fit_galgo.fit.exceptions import (
     NotFitMessageFoundException,
@@ -16,6 +16,7 @@ from fit_galgo.fit.models import (
     FitError,
     Activity,
     DistanceActivity,
+    LapActivity,
     ClimbActivity,
     SetActivity,
     MultisportActivity,
@@ -155,6 +156,18 @@ class FitActivityParser(FitAbstractParser):
 
         if is_distance_sport(session.sport):
             return DistanceActivity(
+                fit_file_path=self._fit_file_path,
+                file_id=file_id,
+                zone_info=self._zone_info,
+                session=session,
+                records=[r for r in self._messages["RECORD"]],
+                laps=[lap for lap in self._messages["LAP"]],
+                workout=workout,
+                workout_steps=workout_steps
+            )
+
+        if is_lap_sport(session.sport):
+            return LapActivity(
                 fit_file_path=self._fit_file_path,
                 file_id=file_id,
                 zone_info=self._zone_info,

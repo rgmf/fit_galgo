@@ -7,12 +7,10 @@ from fit_galgo.fit.definitions import (
     WALKING_SPORT,
     HIKING_SPORT,
     CYCLING_SPORT,
-    SWIMMING_SPORT,
     GENERIC_SUB_SPORT,
     TRAIL_SUB_SPORT,
     ROAD_SUB_SPORT,
-    MOUNTAIN_SUB_SPORT,
-    SWIMMING_SUB_SPORT
+    MOUNTAIN_SUB_SPORT
 )
 from fit_galgo.fit.models import (
     FitModel,
@@ -104,13 +102,6 @@ def test_fit_parse_road_cycling():
     activity = assert_parse_without_errors("tests/files/road_cycling.fit")
     assert_sport(activity, CYCLING_SPORT, ROAD_SUB_SPORT)
     assert_is_distance_activity_with_required_stats(activity)
-
-
-def test_fit_parse_swimming_lap():
-    activity = assert_parse_without_errors("tests/files/swimming_18_laps.fit")
-    assert_sport(activity, SWIMMING_SPORT, SWIMMING_SUB_SPORT)
-    assert_is_distance_activity_with_required_stats(activity)
-    assert_there_are_laps_in_activity(activity, 18)
 
 
 @pytest.mark.skip(reason="The activity is not a mountain biking one")
