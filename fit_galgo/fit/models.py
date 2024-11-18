@@ -670,17 +670,14 @@ class LapActivity(DistanceActivity):
 
     An example of this kind of activities are lap swimming sport.
     """
-    @property
-    def time(self) -> TimeStat:
-        return TimeStat(
-            timestamp=self.session.timestamp,
-            start_time=self.session.start_time,
-            elapsed=self._computed_total_elapsed_time() or self.session.total_elapsed_time,
-            timer=self.session.total_timer_time
-        )
+    def __init__(self, **data):
+        super().__init__(**data)
 
-    def _computed_total_elapsed_time(self) -> float:
-        return sum([l.total_elapsed_time for l in self.laps if l.total_distance > 0])
+        computed_elapsed_time = sum(
+            [l.total_elapsed_time for l in self.laps if l.total_distance > 0]
+        )
+        if computed_elapsed_time:
+            self.session.total_elapsed_time = computed_elapsed_time
 
 
 class Split(BaseModel):
