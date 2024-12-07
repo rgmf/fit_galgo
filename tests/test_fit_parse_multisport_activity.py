@@ -54,6 +54,7 @@ def assert_is_transition_activity_with_required_stats(
     assert isinstance(activity.time.start_time, datetime)
     assert isinstance(activity.time.elapsed, float)
     assert isinstance(activity.time.timer, float)
+    assert isinstance(activity.time.work, float)
 
 
 def assert_duathlon(activity: MultisportActivity, sports: list[tuple]) -> None:

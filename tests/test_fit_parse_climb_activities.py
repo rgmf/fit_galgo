@@ -57,6 +57,8 @@ def assert_is_climb_activity_with_minimal_required_stats(
     assert isinstance(activity.time.start_time, datetime)
     assert isinstance(activity.time.elapsed, float)
     assert isinstance(activity.time.timer, float)
+    assert isinstance(activity.time.work, float)
+    assert activity.time.work < activity.time.elapsed
 
 
 def assert_climbs_data(climbs: list[Climb]) -> None:
@@ -68,6 +70,7 @@ def assert_climbs_data(climbs: list[Climb]) -> None:
         assert isinstance(climb.time.start_time, datetime)
         assert isinstance(climb.time.elapsed, float)
         assert isinstance(climb.time.timer, float)
+        assert isinstance(climb.time.work, float)
         assert climb.split_type is not None
 
 

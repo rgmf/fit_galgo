@@ -61,7 +61,8 @@ TimeStat = namedtuple(
         "timestamp",   # when event was registered
         "start_time",  # start time, when user pressed play/start button.
         "elapsed",     # time from start to end NOT including pauses.
-        "timer"        # time from start to end including pauses.
+        "timer",       # time from start to end including pauses.
+        "work"         # time spent actively working
     ]
 )
 RecordsAndLaps = namedtuple("RecordsAndLaps", ["records", "laps"])
@@ -354,7 +355,8 @@ class Activity(FitModel):
             timestamp=self.session.timestamp,
             start_time=self.session.start_time,
             elapsed=self.session.total_elapsed_time,
-            timer=self.session.total_timer_time
+            timer=self.session.total_timer_time,
+            work=self.session.total_elapsed_time
         )
 
     @property
@@ -566,7 +568,8 @@ class Lap(BaseModel):
             timestamp=self.timestamp,
             start_time=self.start_time,
             elapsed=self.total_elapsed_time,
-            timer=self.total_timer_time
+            timer=self.total_timer_time,
+            work=self.total_elapsed_time
         )
 
     @property
@@ -666,18 +669,28 @@ class DistanceActivity(Activity):
 class LapActivity(DistanceActivity):
     """Distance activity based on Lap(s).
 
-    Because of that elapsed time can be computed from laps.
+    Because of that working time can be computed from laps.
 
     An example of this kind of activities are lap swimming sport.
     """
-    def __init__(self, **data):
-        super().__init__(**data)
 
+    @property
+    def time(self) -> TimeStat:
+        return TimeStat(
+            timestamp=self.session.timestamp,
+            start_time=self.session.start_time,
+            elapsed=self.session.total_elapsed_time,
+            timer=self.session.total_timer_time,
+            work=self._computed_elapsed_time()
+        )
+
+    def _computed_elapsed_time(self):
         computed_elapsed_time = sum(
             [l.total_elapsed_time for l in self.laps if l.total_distance > 0]
         )
         if computed_elapsed_time:
-            self.session.total_elapsed_time = computed_elapsed_time
+            return computed_elapsed_time
+        return self.session.total_elapsed_time
 
 
 class Split(BaseModel):
@@ -706,7 +719,12 @@ class Climb(BaseModel):
             timestamp=self.split.start_time,
             start_time=self.split.start_time,
             elapsed=self.split.total_elapsed_time,
-            timer=self.split.total_timer_time
+            timer=self.split.total_timer_time,
+            work=(
+                self.split.total_elapsed_time
+                if self.split.split_type == SplitType.CLIMB_ACTIVE.value
+                else 0.0
+            )
         )
 
     @property
@@ -744,6 +762,16 @@ class ClimbActivity(Activity):
     @property
     def climbs(self) -> list[Climb]:
         return [Climb(split=s) for s in self.splits]
+
+    @property
+    def time(self) -> TimeStat:
+        return TimeStat(
+            timestamp=self.session.timestamp,
+            start_time=self.session.start_time,
+            elapsed=self.session.total_elapsed_time,
+            timer=self.session.total_timer_time,
+            work=sum([c.time.work for c in self.climbs])
+        )
 
 
 class Set(BaseModel):
@@ -787,7 +815,12 @@ class Set(BaseModel):
             timestamp=self.timestamp,
             start_time=self.start_time,
             elapsed=self.duration,
-            timer=self.duration
+            timer=self.duration,
+            work=(
+                self.duration
+                if self.set_type.value == SetType.ACTIVE.value
+                else 0.0
+            )
         )
 
     def is_active_set(self) -> bool:
@@ -800,6 +833,16 @@ class Set(BaseModel):
 
 class SetActivity(Activity):
     sets: list[Set] = []
+
+    @property
+    def time(self) -> TimeStat:
+        return TimeStat(
+            timestamp=self.session.timestamp,
+            start_time=self.session.start_time,
+            elapsed=self.session.total_elapsed_time,
+            timer=self.session.total_timer_time,
+            work=sum([s.time.work for s in self.sets])
+        )
 
 
 class TransitionActivity(Activity):

@@ -49,6 +49,8 @@ def assert_is_set_activity_with_minimal_required_stats(activity: Activity) -> No
     assert isinstance(activity.time.start_time, datetime)
     assert isinstance(activity.time.elapsed, float)
     assert isinstance(activity.time.timer, float)
+    assert isinstance(activity.time.work, float)
+    assert activity.time.work < activity.time.elapsed
 
 
 def assert_required_set_data(s: Set) -> None:
@@ -59,6 +61,7 @@ def assert_required_set_data(s: Set) -> None:
     assert isinstance(s.time.start_time, datetime)
     assert isinstance(s.time.elapsed, float)
     assert isinstance(s.time.timer, float)
+    assert isinstance(s.time.work, float)
 
 
 def assert_sets_data(sets: list[Set]) -> None:

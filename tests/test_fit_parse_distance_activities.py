@@ -62,6 +62,7 @@ def assert_is_distance_activity_with_required_stats(activity: Activity) -> None:
     assert isinstance(activity.time.start_time, datetime)
     assert isinstance(activity.time.elapsed, float)
     assert isinstance(activity.time.timer, float)
+    assert isinstance(activity.time.work, float)
 
     assert activity.total_distance is not None
     assert activity.speed is not None
