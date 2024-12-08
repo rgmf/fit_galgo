@@ -337,6 +337,17 @@ class Activity(FitModel):
     workout: Workout | None = None
     workout_steps: list[WorkoutStep] = []
 
+    @computed_field
+    @property
+    def time(self) -> TimeStat:
+        return TimeStat(
+            timestamp=self.session.timestamp,
+            start_time=self.session.start_time,
+            elapsed=self.session.total_elapsed_time,
+            timer=self.session.total_timer_time,
+            work=self.session.total_elapsed_time
+        )
+
     @property
     def name(self) -> str:
         return self.session.sport
@@ -348,16 +359,6 @@ class Activity(FitModel):
     @property
     def sub_sport(self) -> str:
         return self.session.sub_sport
-
-    @property
-    def time(self) -> TimeStat:
-        return TimeStat(
-            timestamp=self.session.timestamp,
-            start_time=self.session.start_time,
-            elapsed=self.session.total_elapsed_time,
-            timer=self.session.total_timer_time,
-            work=self.session.total_elapsed_time
-        )
 
     @property
     def heart_rate(self) -> DoubleStat:
