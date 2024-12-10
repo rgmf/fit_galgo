@@ -345,7 +345,7 @@ class Activity(FitModel):
             start_time=self.session.start_time,
             elapsed=self.session.total_elapsed_time,
             timer=self.session.total_timer_time,
-            work=self.session.total_elapsed_time
+            work=self.session.total_timer_time
         )
 
     @property
@@ -691,7 +691,7 @@ class LapActivity(DistanceActivity):
         )
         if computed_elapsed_time:
             return computed_elapsed_time
-        return self.session.total_elapsed_time
+        return self.session.total_timer_time
 
 
 class Split(BaseModel):
