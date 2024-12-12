@@ -56,15 +56,6 @@ WorkoutCustomTarget = namedtuple(
         "value_high", "speed_high", "heart_rate_high", "cadence_high", "power_high"
     ]
 )
-TimeStat = namedtuple(
-    "TimeStat", [
-        "timestamp",   # when event was registered
-        "start_time",  # start time, when user pressed play/start button.
-        "elapsed",     # time from start to end NOT including pauses.
-        "timer",       # time from start to end including pauses.
-        "work"         # time spent actively working
-    ]
-)
 RecordsAndLaps = namedtuple("RecordsAndLaps", ["records", "laps"])
 
 
@@ -330,6 +321,14 @@ class Session(BaseModel):
     max_fractional_cadence: float | None = None
     total_fractional_ascent: float | None = None
     total_fractional_descent: float | None = None
+
+
+class TimeStat(BaseModel):
+    timestamp: datetime
+    start_time: datetime
+    elapsed: float
+    timer: float
+    work: float
 
 
 class Activity(FitModel):
