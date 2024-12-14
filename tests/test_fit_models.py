@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 
 from pydantic import ValidationError
 
-from fit_galgo.fit.models import FileId, Session, Split
+from fit_galgo.fit.models import FileId, Session, Split, Workout
+from fit_galgo.fit.definitions import UNKNOWN
 
 
 def test_fit_file_id_all_fields():
@@ -173,3 +174,43 @@ def test_fit_split_with_bad_data_type():
             "start_time": 200034,
             "split_type": 1
         })
+
+
+def test_wkt_name_with_valid_string():
+    workout = Workout(wkt_name="Entrenamiento de Fuerza")
+    assert workout.wkt_name == "Entrenamiento de Fuerza"
+
+
+def test_wkt_name_with_list_of_strings():
+    workout = Workout(wkt_name=["Suspensiones", "Flexiones", ""])
+    assert workout.wkt_name == "Suspensiones, Flexiones"
+
+
+def test_wkt_name_with_list_of_whitespace():
+    workout = Workout(wkt_name=["   ", "\n", "\t"])
+    assert workout.wkt_name == UNKNOWN
+
+
+def test_wkt_name_with_mixed_list():
+    workout = Workout(wkt_name=["Suspensiones", "", "   ", "Correr", "\n"])
+    assert workout.wkt_name == "Suspensiones, Correr"
+
+
+def test_wkt_name_with_empty_string():
+    workout = Workout(wkt_name="")
+    assert workout.wkt_name == UNKNOWN
+
+
+def test_wkt_name_with_none():
+    workout = Workout(wkt_name=None)
+    assert workout.wkt_name == UNKNOWN
+
+
+def test_wkt_name_with_invalid_type():
+    with pytest.raises(ValidationError):
+        Workout(wkt_name=123)
+
+
+def test_wkt_name_with_empty_list():
+    workout = Workout(wkt_name=[])
+    assert workout.wkt_name == UNKNOWN

@@ -86,7 +86,7 @@ class WorkoutExercise(BaseModel):
     name: str = UNKNOWN
     weight: float = 0.0
 
-    @field_validator("category")
+    @field_validator("category", mode="before")
     @classmethod
     def convert_category(cls, value):
         if value is None:
@@ -165,7 +165,7 @@ class WorkoutStep(BaseModel):
     secondary_custom_target_cadence_high: int | None = None
     secondary_custom_target_power_high: int | None = None
 
-    @field_validator("notes")
+    @field_validator("notes", mode="before")
     @classmethod
     def convert_notes(cls, value):
         if value is not None and isinstance(value, list):
@@ -262,12 +262,12 @@ class Workout(BaseModel):
     pool_length: int | None = None
     pool_length_unit: str | None = None
 
-    @field_validator("wkt_name")
+    @field_validator("wkt_name", mode="before")
     @classmethod
     def convert_wkt_name(cls, value):
-        if value is not None and isinstance(value, list):
-            return ", ".join(value)
-        return value
+        if isinstance(value, list):
+            value = ", ".join(filter(None, (v.strip() for v in value)))
+        return value if value else UNKNOWN
 
 
 class Session(BaseModel):
@@ -787,7 +787,7 @@ class Set(BaseModel):
     message_index: int | None = None
     wkt_step_index: int | None = None
 
-    @field_validator("set_type")
+    @field_validator("set_type", mode="before")
     @classmethod
     def convert_set_type(cls, value):
         return value if value in list(SetType) else SetType.UNKNOWN
